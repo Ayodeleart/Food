@@ -1,7 +1,7 @@
 {
   "name": "Burger App",
   "short_name": "Burger",
-  "description": "Order burgers, pizza and burritos.",
+  "description": "Order food and drinks.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
