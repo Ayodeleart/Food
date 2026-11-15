@@ -90,7 +90,11 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .avatar{border-radius:22px;background:rgba(20,12,8,.32)}
 .glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.02) 45%,rgba(255,255,255,.12)),rgba(38,24,16,.42);-webkit-backdrop-filter:blur(16px) saturate(200%);backdrop-filter:blur(16px) saturate(200%);border:1px solid rgba(255,255,255,.38);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.7),inset -1.5px -1.5px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.12),0 12px 32px rgba(25,12,5,.32),0 2px 8px rgba(25,12,5,.2)}
 .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(130% 100% at 18% -10%,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),radial-gradient(90% 80% at 90% 120%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%)}
-.gglide{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:30px;pointer-events:none;background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.14));-webkit-backdrop-filter:blur(6px) saturate(180%);backdrop-filter:blur(6px) saturate(180%);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.85),inset -1px -1px 1px rgba(255,255,255,.35),0 4px 12px rgba(25,12,5,.25)}
+.gglide{position:absolute;top:-6px;left:0;width:0;height:calc(100% + 12px);border-radius:999px;overflow:hidden;pointer-events:none;z-index:3;will-change:left,width,transform;background:transparent;box-shadow:0 10px 22px -8px rgba(0,0,0,.45)}
+.gclone{position:absolute;top:6px;left:0;display:flex;padding:6px;box-sizing:border-box;transform:scale(1.15)}
+.gclone .gb{transition:none;pointer-events:none}
+.gglide::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 1px 2px 2px -1px rgba(255,255,255,.75),inset -1px -2px 2px -1px rgba(255,255,255,.35),inset 5px 0 6px -4px rgba(255,70,200,.5),inset -5px 0 6px -4px rgba(70,225,255,.6),inset 0 5px 7px -5px rgba(255,235,120,.4),inset 0 -5px 7px -5px rgba(130,205,255,.45)}
+.gnav .gb{z-index:1}
 .dock{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) * .3 + 4px);display:flex;gap:12px;z-index:5}
 .gnav{flex:1;height:66px;border-radius:33px;padding:6px;display:flex;box-sizing:border-box}
 .gb{flex:1;position:relative;display:flex;align-items:center;justify-content:center;border-radius:27px;color:#FFF3DB;transition:transform .2s}
@@ -295,22 +299,54 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     document.documentElement.style.background = 'linear-gradient(to bottom,' + top + ' 50%,' + bottom + ' 50%)';
   }
   var lastScreen = null;
-  var navRect = null;
-  function glideNav(animate) {
-    var g = app.querySelector('.gglide'), nv = app.querySelector('.gnav'); if (!g || !nv) { navRect = null; return; }
-    var on = nv.querySelector('.gb.on');
-    if (!on) { g.style.opacity = 0; navRect = null; return; }
-    var l = on.offsetLeft + 3, w = on.offsetWidth - 6;
-    g.style.left = l + 'px'; g.style.width = w + 'px'; g.style.opacity = 1;
-    if (animate !== false && navRect && navRect.l !== l && !REDUCED) {
-      var a = Math.min(navRect.l, l), b = Math.max(navRect.l + navRect.w, l + w);
-      g.animate([
-        { left: navRect.l + 'px', width: navRect.w + 'px' },
-        { left: a + 'px', width: (b - a) + 'px', offset: .42 },
-        { left: l + 'px', width: w + 'px' }
-      ], { duration: 560, easing: 'cubic-bezier(.3,1.3,.5,1)' });
+  var sp = null, spRaf = 0, spLast = 0, gl = null, gc = null, gtabs = [], gnavEl = null, PADX = 4;
+  function spTarget() { var on = gnavEl && gnavEl.querySelector('.gb.on'); return on ? [on.offsetLeft - PADX, on.offsetLeft + on.offsetWidth + PADX] : null; }
+  function spRender() {
+    if (!gl || !sp) return;
+    var w = sp.R - sp.L, base = gtabs[0].offsetWidth + PADX * 2, st = w / base,
+        sq = Math.max(.8, Math.min(1, 1 - (st - 1) * .16));
+    gl.style.left = sp.L + 'px'; gl.style.width = w + 'px'; gl.style.transform = 'scaleY(' + sq + ')';
+    gc.style.left = (-sp.L) + 'px'; gc.style.transformOrigin = ((sp.L + sp.R) / 2) + 'px 50%';
+    for (var i = 0; i < gtabs.length; i++) {
+      var c = gtabs[i].offsetLeft + gtabs[i].offsetWidth / 2;
+      gtabs[i].style.opacity = (c > sp.L + 4 && c < sp.R - 4) ? 0 : '';
     }
-    navRect = { l: l, w: w };
+  }
+  function spTick(now) {
+    spRaf = 0;
+    if (!sp || !gnavEl || !gnavEl.isConnected) return;
+    var t = spTarget(); if (!t) return;
+    var dt = Math.min((now - spLast) / 1000, 1 / 20); spLast = now;
+    var right = (t[0] + t[1]) / 2 > (sp.L + sp.R) / 2, kL = right ? 450 : 2800, kR = right ? 2800 : 450, h = 1 / 120, n = Math.max(1, Math.round(dt / h));
+    for (var i = 0; i < n; i++) {
+      sp.vL += ((t[0] - sp.L) * kL - sp.vL * 2 * Math.sqrt(kL) * (right ? .6 : .9)) * h; sp.L += sp.vL * h;
+      sp.vR += ((t[1] - sp.R) * kR - sp.vR * 2 * Math.sqrt(kR) * (right ? .9 : .6)) * h; sp.R += sp.vR * h;
+      if (sp.R < sp.L + 40) sp.R = sp.L + 40;
+    }
+    if (Math.abs(t[0] - sp.L) < .4 && Math.abs(t[1] - sp.R) < .4 && Math.abs(sp.vL) < 3 && Math.abs(sp.vR) < 3) {
+      sp.L = t[0]; sp.R = t[1]; sp.vL = sp.vR = 0; spRender(); return;
+    }
+    spRender();
+    spRaf = requestAnimationFrame(spTick);
+  }
+  function glideNav(animate) {
+    var nv = app.querySelector('.gnav'), g = nv && nv.querySelector('.gglide');
+    if (!nv || !g) { gl = null; gc = null; gnavEl = null; sp = null; return; }
+    gnavEl = nv; gl = g; gtabs = [].slice.call(nv.querySelectorAll('.gb'));
+    var old = g.querySelector('.gclone'); if (old) g.removeChild(old);
+    /* magnified copy of the icons that lives inside the glass */
+    gc = document.createElement('div'); gc.className = 'gclone'; gc.setAttribute('aria-hidden', 'true');
+    gtabs.forEach(function (b) {
+      var c = b.cloneNode(true); c.removeAttribute('data-go'); c.removeAttribute('aria-label'); c.tabIndex = -1; c.style.opacity = ''; c.classList.remove('on'); gc.appendChild(c);
+    });
+    g.appendChild(gc);
+    gc.style.width = nv.clientWidth + 'px'; gc.style.height = nv.clientHeight + 'px';
+    var t = spTarget();
+    if (!t) { g.style.opacity = 0; sp = null; gtabs.forEach(function (b) { b.style.opacity = ''; }); return; }
+    g.style.opacity = 1;
+    if (!sp || animate === false || REDUCED) { sp = { L: t[0], R: t[1], vL: 0, vR: 0 }; spRender(); return; }
+    spRender();
+    if (!spRaf) { spLast = performance.now(); spRaf = requestAnimationFrame(spTick); }
   }
   function render() {
     var s = state.screen;
