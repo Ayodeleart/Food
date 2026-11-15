@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Dunuts</title>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&display=swap" rel="stylesheet">
+<style>
+:root{--c:#d9cacd;--ink:#17110f;--muted:#4a4244;--pill:rgba(255,255,255,.55)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+html,body{height:100%;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;color:var(--ink);overflow:hidden;background-color:var(--c);background-image:linear-gradient(180deg,rgba(255,255,255,.14),rgba(0,0,0,.03));transition:background-color .5s}
+#app{position:relative;height:100%;max-width:430px;margin:0 auto;overflow:hidden}
+.brand{position:absolute;left:0;right:0;top:11%;text-align:center;font-family:'Yellowtail','Brush Script MT',cursive;font-size:clamp(30px,9vw,40px);color:#3a2c36;line-height:1;transition:opacity .3s}
+#app.det .brand{opacity:0}
+.stage{position:absolute;inset:0;touch-action:pan-y;z-index:1}
+.item{position:absolute;left:50%;top:41.5%;width:60%;will-change:transform;pointer-events:none;transition:opacity .35s}
+.item.fly{transition:transform .75s cubic-bezier(.3,1.35,.5,1),opacity .35s}
+.item svg,.item img{width:100%;height:auto;display:block;filter:drop-shadow(0 12px 12px rgba(80,30,40,.28))}
+.item img{aspect-ratio:1;object-fit:contain;opacity:0;transition:opacity .3s;-webkit-user-drag:none}
+.item img.ready{opacity:1}
+.qty,.name,.price{position:absolute;left:50%;transform:translate(-50%,-50%);z-index:5;margin:0;white-space:nowrap;transition:opacity .3s,transform .45s}
+.qty{top:57%;display:flex;pointer-events:none}
+.name{top:67.7%;font-size:19px;font-weight:300;color:var(--muted);pointer-events:none}
+.price{top:72.5%;font-size:31px;font-weight:700;pointer-events:none}
+#app.det .qty,#app.det .name,#app.det .price{opacity:0;transform:translate(-50%,calc(-50% + 24px))}
+.q{position:relative;width:40px;height:40px;border-radius:20px;background:var(--pill);box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;pointer-events:auto;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+.q.open{width:132px}
+.q button{position:absolute;top:0;width:40px;height:40px;border:0;background:none;font:inherit;font-size:25px;font-weight:300;color:var(--ink);cursor:pointer;padding:0}
+.q .mi{left:0;opacity:0;transform:scale(.4);transition:opacity .25s,transform .35s}
+.q.open .mi{opacity:1;transform:none;transition-delay:.1s}
+.q .pl{right:0}
+.q .n{position:absolute;left:40px;right:40px;top:0;height:40px;line-height:40px;text-align:center;font-weight:500;opacity:0;transition:opacity .25s}
+.q.open .n{opacity:1;transition-delay:.14s}
+#app.det .q{pointer-events:none}
+.bar{position:absolute;left:18px;right:18px;bottom:24px;display:flex;gap:10px;transform:translateY(160%);transition:transform .55s cubic-bezier(.34,1.56,.64,1);z-index:10}
+.bar.show{transform:none}
+.cta{flex:1;height:50px;border-radius:25px;border:0;background:#111;color:#fff;font:700 15px -apple-system,system-ui,sans-serif;cursor:pointer}
+.total{width:112px;height:50px;border-radius:25px;background:var(--pill);display:grid;place-items:center;font-weight:700}
+.detail{position:absolute;inset:0;z-index:8;pointer-events:none}
+.back,.dtitle,.chip,.dqty{opacity:0;transition:opacity .25s,transform .3s}
+.back{position:absolute;left:14px;top:18px;border:0;background:none;font-size:26px;color:var(--ink);padding:6px 10px;cursor:pointer;transform:translateX(-12px)}
+.dtitle{position:absolute;left:0;right:0;top:26px;text-align:center;color:var(--muted);margin:0;font-size:16px;transform:translateY(-10px)}
+.chips{position:absolute;left:16px;top:30%;display:flex;flex-direction:column;gap:12px}
+.chip{display:flex;align-items:center;gap:10px;background:var(--pill);backdrop-filter:blur(6px);border-radius:20px;padding:7px 8px 7px 14px;font-size:13px;align-self:flex-start;transform:translateX(-36px)}
+.chip small{color:var(--muted)}
+.chip b{font-size:11px;padding:3px 8px;border-radius:12px;background:var(--acc);color:#111}
+.dqty{position:absolute;left:0;right:0;top:70%;display:flex;justify-content:center;transform:translateY(24px)}
+.detail.open .back{opacity:1;transform:none;pointer-events:auto;transition:opacity .4s .45s,transform .5s .45s}
+.detail.open .dtitle{opacity:1;transform:none;transition:opacity .4s .4s,transform .5s .4s}
+.detail.open .chip{opacity:1;transform:none;transition:opacity .4s calc(.4s + var(--i)*.08s),transform .55s cubic-bezier(.34,1.4,.64,1) calc(.4s + var(--i)*.08s)}
+.detail.open .dqty{opacity:1;transform:none;transition:opacity .4s .65s,transform .5s .65s}
+.detail.open .dqty .q{pointer-events:auto}
+.toast{position:absolute;left:50%;top:6%;transform:translate(-50%,-30px);opacity:0;background:#111;color:#fff;padding:8px 16px;border-radius:18px;font-size:13px;transition:.3s;z-index:11;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.bar,.q,.item.fly{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="brand">Dunuts</div>
+  <div class="stage" id="stage"></div>
+  <div class="qty" id="qty"></div>
+  <p class="name" id="name"></p>
+  <p class="price" id="price"></p>
+  <div class="detail" id="detail">
+    <button class="back" id="back" aria-label="Back">←</button>
+    <p class="dtitle" id="dtitle"></p>
+    <div class="chips" id="chips"></div>
+    <div class="dqty" id="dqty"></div>
+  </div>
+  <div class="bar" id="bar">
+    <button class="cta" id="cta">Add to Cart</button>
+    <div class="total" id="total"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+/* Add a snack with a PNG: {n:'Chips',p:1.5,img:'snacks/chips.png',nut:[['Salt','1g',2],['Sugar','0g',0],['Fat','8g',11],['Energy','150kcal',30]]}
+   Optional: bg:'#hex', acc:'#hex'. If left out they are picked from the image's own colours. */
+const D=[
+ {n:'Choco Drizzle',p:2.4,base:'#d9a064',ice:'#8e1f2f',dr:'#fff',spr:[],bg:'#d9cacd',acc:'#e6c9f2',nut:[['Salt','9g',4],['Sugar','14g',9],['Fat','12g',17],['Energy','260kcal',52]]},
+ {n:'Vanilla Swirl',p:2.4,base:'#d9a064',ice:'#f6e7d2',dr:'#4a2c24',spr:[],bg:'#dacfc8',acc:'#f1d9bd',nut:[['Salt','7g',3],['Sugar','12g',8],['Fat','10g',14],['Energy','230kcal',46]]},
+ {n:'Lemon Pop',p:2.4,base:'#d9a064',ice:'#f4b814',dr:null,spr:['#fff','#8a5a2b','#fff3c0'],bg:'#dcd7b8',acc:'#f6e27a',nut:[['Salt','6g',3],['Sugar','11g',7],['Fat','9g',12],['Energy','210kcal',42]]},
+ {n:'Blue Frost',p:2.4,base:'#d9a064',ice:'#3bb8d8',dr:null,spr:['#f2b6ff','#fff','#ffd45e','#ff6b81'],bg:'#c8d7dc',acc:'#aee4f3',nut:[['Salt','7g',3],['Sugar','13g',8],['Fat','9g',12],['Energy','220kcal',44]]},
+ {n:'Pink Sprinkle',p:2.4,base:'#d9a064',ice:'#ee3f8f',dr:null,spr:['#fff','#7fdc9b','#6ac4ff','#ffd45e','#b98cff'],bg:'#e1c5cf',acc:'#f6b6d0',nut:[['Salt','8g',3],['Sugar','8g',7],['Fat','6g',12],['Energy','180kcal',40]]}
+];
+const $=id=>document.getElementById(id),app=$('app'),N=D.length;
+const qty=D.map(()=>0);let cur=0,det=false;
+function rnd(s){return()=>(s=(s*16807)%2147483647)/2147483647}
+function donut(d,seed){
+ const r=rnd(seed*97+13),id='h'+seed+Math.floor(r()*1e5);let s='';
+ const ring=(R,h)=>`M100 ${100-R}a${R} ${R} 0 1 0 .01 0z M100 ${100-h}a${h} ${h} 0 1 1 -.01 0z`;
+ s+=`<defs><radialGradient id="${id}" cx="40%" cy="35%"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></radialGradient></defs>`;
+ s+=`<path d="${ring(92,24)}" fill="${d.base}" fill-rule="evenodd"/>`;
+ const pts=[];for(let i=0;i<36;i++){const a=i/36*Math.PI*2,w=1+(i%2?.05:-.02)*Math.sin(i*1.7);pts.push([100+Math.sin(a)*79*w,100-Math.cos(a)*79*w])}
+ const edge=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('')+'z';
+ s+=`<path d="${edge}M100 74a26 26 0 1 0 .01 0z" fill="${d.ice}" fill-rule="evenodd" stroke="${d.ice}" stroke-width="10" stroke-linejoin="round"/>`;
+ s+=`<path d="${ring(92,24)}" fill="url(#${id})" fill-rule="evenodd"/>`;
+ if(d.dr){for(let i=0;i<5;i++){const a=r()*Math.PI*2,a2=a+.7+r()*.5,R=40+r()*30;
+  s+=`<path d="M${100+Math.cos(a)*R} ${100+Math.sin(a)*R}Q${100+Math.cos((a+a2)/2)*(R+14)} ${100+Math.sin((a+a2)/2)*(R+14)} ${100+Math.cos(a2)*(R-2)} ${100+Math.sin(a2)*(R-2)}" fill="none" stroke="${d.dr}" stroke-width="3.5" stroke-linecap="round"/>`}}
+ d.spr.forEach(c=>{for(let i=0;i<9;i++){const a=r()*Math.PI*2,R=36+r()*38,x=100+Math.cos(a)*R,y=100+Math.sin(a)*R;
+  s+=`<rect x="${x-4}" y="${y-1.4}" width="8" height="2.8" rx="1.4" fill="${c}" transform="rotate(${r()*180} ${x} ${y})"/>`}});
+ return `<svg viewBox="0 0 200 200" aria-hidden="true">${s}</svg>`}
+const money=v=>'$'+v.toFixed(2),pad=n=>String(n).padStart(2,'0');
+/* quantity control: built once so the plus can slide open */
+function mkQ(el){
+ el.innerHTML='<div class="q"><button class="mi" aria-label="Remove one">−</button><span class="n"></span><button class="pl" aria-label="Add one">+</button></div>';
+ const q=el.firstChild;
+ q.querySelector('.mi').onclick=e=>{e.stopPropagation();qty[cur]=Math.max(0,qty[cur]-1);upd()};
+ q.querySelector('.pl').onclick=e=>{e.stopPropagation();qty[cur]=Math.min(99,qty[cur]+1);upd()}}
+mkQ($('qty'));mkQ($('dqty'));
+function upd(){
+ const n=qty[cur],d=D[cur];
+ document.querySelectorAll('.q').forEach(q=>{q.classList.toggle('open',n>0);if(n>0)q.querySelector('.n').textContent=pad(n)});
+ $('bar').classList.toggle('show',n>0);$('total').textContent=money(d.p*Math.max(1,n))}
+function render(){
+ const d=D[cur];document.documentElement.style.setProperty('--c',d.bg||'#d9cacd');
+ $('name').textContent=d.n;$('price').textContent=money(d.p);$('dtitle').textContent=d.n;
+ $('chips').innerHTML=(d.nut||[]).map((x,i)=>`<div class="chip" style="--i:${i};--acc:${d.acc||'#f6b6d0'}"><span>${x[0]} <small>${x[1]}</small></span><b>${x[2]}%</b></div>`).join('');
+ upd()}
+/* spring carousel: neighbours sit lower, smaller, and rise as they arrive */
+/* PNG snacks: trim transparent margins, centre in a square, pick tint from the image */
+function hsl(r,g,b){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b),l=(M+m)/2,e=M-m;let h=0,s=0;
+ if(e){s=e/(1-Math.abs(2*l-1));h=M===r?((g-b)/e)%6:M===g?(b-r)/e+2:(r-g)/e+4;h=(h*60+360)%360}return[h,s*100]}
+function prep(d,el){
+ const img=el.firstChild,src=new Image();img.onload=()=>img.classList.add('ready');
+ src.onerror=()=>{el.innerHTML=donut(d,D.indexOf(d)+1)};
+ src.onload=()=>{
+  try{
+   const w=src.naturalWidth,h=src.naturalHeight,sc=Math.min(1,500/Math.max(w,h)),aw=Math.max(1,Math.round(w*sc)),ah=Math.max(1,Math.round(h*sc));
+   const c=document.createElement('canvas');c.width=aw;c.height=ah;const x=c.getContext('2d',{willReadFrequently:true});
+   x.drawImage(src,0,0,aw,ah);const px=x.getImageData(0,0,aw,ah).data;
+   let x0=aw,y0=ah,x1=-1,y1=-1,R=0,G=0,B=0,n=0;
+   for(let y=0;y<ah;y++)for(let X=0;X<aw;X++){const i=(y*aw+X)*4,a=px[i+3];
+    if(a>24){if(X<x0)x0=X;if(X>x1)x1=X;if(y<y0)y0=y;if(y>y1)y1=y;if(a>200){R+=px[i];G+=px[i+1];B+=px[i+2];n++}}}
+   if(x1<0)throw 0;
+   const k=1/sc,sx=x0*k,sy=y0*k,sw=(x1-x0+1)*k,sh=(y1-y0+1)*k,mx=Math.max(sw,sh),S=Math.min(1000,Math.round(mx/.92));
+   const o=document.createElement('canvas');o.width=o.height=S;const q=o.getContext('2d'),s=S*.92/mx,dw=sw*s,dh=sh*s;
+   q.imageSmoothingQuality='high';q.drawImage(src,sx,sy,sw,sh,(S-dw)/2,(S-dh)/2,dw,dh);
+   if(n){const[hh,ss]=hsl(R/n,G/n,B/n);
+    if(!d.bg)d.bg=`hsl(${Math.round(hh)} ${Math.round(Math.min(32,Math.max(10,ss*.35)))}% 82%)`;
+    if(!d.acc)d.acc=`hsl(${Math.round(hh)} ${Math.round(Math.min(70,Math.max(35,ss*.8)))}% 80%)`}
+   o.toBlob(b=>{img.src=b?URL.createObjectURL(b):d.img});
+  }catch(e){img.src=d.img}
+  if(D[cur]===d)render()};
+ src.src=d.img}
+const stage=$('stage'),items=D.map((d,i)=>{const el=document.createElement('div');el.className='item';el.innerHTML=d.img?'<img alt="" draggable="false">':donut(d,i+1);stage.appendChild(el);if(d.img)prep(d,el);return el});
+let pos=0,vel=0,target=0,raf=0,last=0,drag=null;
+const sp=()=>app.clientWidth*.49;
+function layout(){
+ if(det)return;
+ const W=app.clientWidth,s0=sp();
+ items.forEach((el,i)=>{const o=i-pos,a=Math.abs(o),m=Math.min(a,1.6);
+  const sc=Math.max(.2,1-.42*Math.min(a,1)-(a>1?.06*(a-1):0));
+  el.style.transform=`translate(-50%,-50%) translate(${o*s0}px,${m*.27*W}px) scale(${sc})`;
+  el.style.opacity=a>1.9?0:1;el.style.zIndex=100-Math.round(a*10)});
+ const n=Math.max(0,Math.min(N-1,Math.round(pos)));
+ if(n!==cur){cur=n;render()}}
+function tick(t){
+ const dt=Math.min((t-last)/1000,.032);last=t;
+ const k=190,c=14;vel+=(-k*(pos-target)-c*vel)*dt;pos+=vel*dt;layout();
+ if(Math.abs(vel)<.003&&Math.abs(pos-target)<.0008){pos=target;vel=0;layout();raf=0;return}
+ raf=requestAnimationFrame(tick)}
+function go(){if(!raf){last=performance.now();raf=requestAnimationFrame(tick)}}
+stage.addEventListener('pointerdown',e=>{
+ if(det)return;
+ stage.setPointerCapture(e.pointerId);cancelAnimationFrame(raf);raf=0;
+ items.forEach(x=>x.classList.remove('fly'));
+ drag={x:e.clientX,p:pos,t:performance.now(),lx:e.clientX,lt:performance.now(),v:0,m:0};vel=0});
+stage.addEventListener('pointermove',e=>{
+ if(!drag)return;const dx=e.clientX-drag.x;drag.m=Math.max(drag.m,Math.abs(dx));
+ let p=drag.p-dx/sp();if(p<0)p*=.35;if(p>N-1)p=N-1+(p-(N-1))*.35;pos=p;
+ const now=performance.now(),dt=(now-drag.lt)/1000;
+ if(dt>0){drag.v=drag.v*.6+(-(e.clientX-drag.lx)/sp()/dt)*.4}
+ drag.lx=e.clientX;drag.lt=now;layout()});
+function release(e,cancel){
+ if(!drag)return;const d=drag;drag=null;
+ if(!cancel&&d.m<8&&performance.now()-d.t<500){
+  const r=app.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*.415;let idx=0,bd=1e9;
+  items.forEach((_,i)=>{const dd=Math.abs(e.clientX-(cx+(i-pos)*sp()));if(dd<bd){bd=dd;idx=i}});
+  if(Math.hypot(e.clientX-cx,e.clientY-cy)<r.width*.36&&Math.abs(pos-cur)<.05){openD();return}
+  target=idx;vel=0;
+ }else{
+  const v=Math.max(-6,Math.min(6,d.v));
+  target=Math.max(0,Math.min(N-1,Math.round(pos+v*.16)));vel=v*.8}
+ go()}
+stage.addEventListener('pointerup',e=>release(e,false));
+stage.addEventListener('pointercancel',e=>release(e,true));
+/* details: donut lifts up and grows, then the details arrive */
+function openD(){
+ if(det)return;det=true;
+ const W=app.clientWidth,H=app.clientHeight,el=items[cur];
+ const dx=.46*W,dy=.17*H+.46*W-.415*H;
+ el.classList.add('fly');
+ el.style.transform=`translate(-50%,-50%) translate(${dx}px,${dy}px) rotate(-8deg) scale(${.92/.6})`;
+ items.forEach((x,i)=>{if(i!==cur)x.style.opacity=0});
+ app.classList.add('det');$('detail').classList.add('open')}
+function closeD(){
+ det=false;app.classList.remove('det');$('detail').classList.remove('open');
+ const el=items[cur];pos=target=cur;vel=0;layout();
+ setTimeout(()=>{if(!det&&!drag)el.classList.remove('fly')},800)}
+$('back').onclick=closeD;
+addEventListener('resize',()=>{if(!det)layout()});
+['gesturestart','dblclick'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+$('cta').onclick=()=>{const n=qty[cur];$('toast').textContent=n+' × '+D[cur].n+' added to cart';
+ $('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1600);qty[cur]=0;upd()};
+render();layout();
+</script>
+</body>
+</html>

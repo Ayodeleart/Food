@@ -118,9 +118,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .dcard{background:#fff;color:#1c2a25;border-radius:32px;padding:10px 8px 16px;text-align:center;box-shadow:0 10px 16px -6px rgba(120,80,0,.28);display:flex;flex-direction:column;align-items:center}
 .dcard img{width:100%;height:110px;object-fit:contain}
 .cic img{width:70%;height:70%;object-fit:contain;pointer-events:none}
-.catpage{position:absolute;top:0;left:0;right:0;bottom:0;z-index:40;background:#e8ebea}
+.catpage{position:absolute;top:0;left:0;right:0;bottom:0;z-index:40;background:#e8ebea;will-change:clip-path}
 .catpage iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
-.subback{position:absolute;left:8px;top:calc(env(safe-area-inset-top,0px) + 12px);width:44px;height:44px;border-radius:22px;background:rgba(20,12,8,.5);color:#FFF3DB;display:flex;align-items:center;justify-content:center;z-index:2}
+.subback{position:absolute;right:8px;top:calc(env(safe-area-inset-top,0px) + 12px);width:44px;height:44px;border-radius:22px;background:rgba(20,12,8,.5);color:#FFF3DB;display:flex;align-items:center;justify-content:center;z-index:2}
 .gtitle{padding:22px 40px 10px;font-size:26px;font-weight:700;color:#2A211B;letter-spacing:.5px;text-transform:uppercase}
 .dcard b{margin-top:8px;font-size:18px}
 .dcard small{font-size:12px;font-weight:600;opacity:.7}
@@ -383,16 +383,58 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     if (document.getElementById('drawer')) return;
     app.insertAdjacentHTML('beforeend', drawerHTML());
   }
-  /* Categories that open their own page instead of the default category screen */
-  var PAGES = { 'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html' };
-  function openCat(k) {
-    if (PAGES[k]) {
-      if (document.getElementById('catpage')) return;
-      app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage"><iframe src="' + PAGES[k] + '" title="' + esc(CATS[k].label) + '"></iframe>' +
-        '<button class="subback" data-closesub="1" aria-label="Back">' + ICON.back + '</button></div>');
-      return;
+  /* Categories that open their own page (circular reveal from the tap) */
+  var PAGES = {
+    'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html',
+    'burgers-sandwiches-shawarma': 'pages/dunuts.html',
+    'small-chops-snacks': 'pages/dunuts.html'
+  };
+  ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
+  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var EASE = 'cubic-bezier(.22,.8,.2,1)';
+  var origin = { x: 0, y: 0 };
+  function circleAt(r) { return 'circle(' + r + 'px at ' + origin.x + 'px ' + origin.y + 'px)'; }
+  function openCat(k, ev) {
+    if (!PAGES[k]) { state.screen = 'menu'; state.cat = k; render(); return; }
+    if (document.getElementById('catpage')) return;
+    var box = app.getBoundingClientRect();
+    origin.x = ev && ev.clientX != null ? ev.clientX - box.left : box.width / 2;
+    origin.y = ev && ev.clientY != null ? ev.clientY - box.top : box.height / 2;
+    var far = Math.hypot(Math.max(origin.x, box.width - origin.x), Math.max(origin.y, box.height - origin.y)) + 4;
+    app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage" style="background:' + CATS[k].bg + ';clip-path:' + circleAt(0) + '">' +
+      '<iframe src="' + PAGES[k] + '" title="' + esc(CATS[k].label) + '" style="opacity:0"></iframe>' +
+      '<button class="subback" data-closesub="1" aria-label="Close" style="opacity:0">' + ICON2.close + '</button></div>');
+    var pg = document.getElementById('catpage'), fr = pg.querySelector('iframe'), bk = pg.querySelector('.subback');
+    var t0 = performance.now(), loaded = false, shown = false;
+    function reveal() {
+      if (shown || !loaded || performance.now() - t0 < 300) return;
+      shown = true;
+      if (REDUCED) { fr.style.opacity = 1; bk.style.opacity = 1; return; }
+      fr.animate([{ opacity: 0, transform: 'scale(.94) translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: EASE, fill: 'forwards' });
+      bk.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 160, easing: EASE, fill: 'forwards' });
     }
-    state.screen = 'menu'; state.cat = k; render();
+    fr.addEventListener('load', function () {
+      loaded = true;
+      try {   // the bubble tea page has its own back button: use it, and hide ours
+        var own = fr.contentDocument.querySelector('.top .round[aria-label="Back"]');
+        if (own) { own.addEventListener('click', closeCat); bk.hidden = true; }
+      } catch (_) {}
+      setTimeout(reveal, Math.max(0, 300 - (performance.now() - t0)));
+    });
+    setTimeout(function () { loaded = true; reveal(); }, 1800);
+    if (REDUCED) { pg.style.clipPath = 'none'; return; }
+    pg.animate([{ clipPath: circleAt(0) }, { clipPath: circleAt(far) }], { duration: 560, easing: EASE, fill: 'forwards' })
+      .finished.then(function () { pg.style.clipPath = 'none'; }).catch(function () {});
+  }
+  function closeCat() {
+    var pg = document.getElementById('catpage'); if (!pg || pg.closing) return;
+    pg.closing = true;
+    function done() { if (pg.parentNode) pg.parentNode.removeChild(pg); }
+    if (REDUCED) { done(); return; }
+    var box = app.getBoundingClientRect(), far = Math.hypot(Math.max(origin.x, box.width - origin.x), Math.max(origin.y, box.height - origin.y)) + 4;
+    pg.querySelector('iframe').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' });
+    pg.animate([{ clipPath: circleAt(far) }, { clipPath: circleAt(0) }], { duration: 440, delay: 120, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' })
+      .finished.then(done).catch(done);
   }
   function closeDrawer() { var d = document.getElementById('drawer'); if (d) d.parentNode.removeChild(d); }
 
@@ -438,14 +480,14 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
         var o = t.getAttribute('data-open'), f = t.getAttribute('data-fav'), a = t.getAttribute('data-add'), g = t.getAttribute('data-go'), ci = t.getAttribute('data-ci');
         if (t.getAttribute('data-drawer')) { openDrawer(); return; }
         if (t.getAttribute('data-closedrawer')) { closeDrawer(); return; }
-        if (t.getAttribute('data-closesub')) { var sb = document.getElementById('catpage'); if (sb) sb.parentNode.removeChild(sb); return; }
+        if (t.getAttribute('data-closesub')) { closeCat(); return; }
         if (ci !== null) {
           if (justDragged) return;
           var k = +ci;
-          if (k === car) { openCat(ORDER[k % N]); } else { carAnimate(k); }
+          if (k === car) { openCat(ORDER[k % N], e); } else { carAnimate(k); }
           return;
         }
-        if (o) { openCat(o); return; }
+        if (o) { openCat(o, e); return; }
         if (g) { state.screen = g === 'home' ? 'main' : g; render(); if (g === 'search') { var q = document.getElementById('q'); if (q) q.focus(); } return; }
         if (a) {
           state.cart.push(a); updBadge();

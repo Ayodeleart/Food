@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#bda9e3">
+<title>Bubble Tea Protein</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&display=swap">
+<style>
+:root{--bg:#bda9e3;--card:#5a2fb0;--ink:#2a0a6e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%}
+body{background:#8a8f88;display:flex;align-items:center;justify-content:center;font-family:"Open Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111}
+.app{position:relative;width:100%;max-width:430px;height:100dvh;background:var(--bg);transition:background .4s;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+@media (min-width:600px){.app{height:min(880px,96dvh);border-radius:36px}}
+.circle{position:absolute;border-radius:50%;background:var(--card);transition:background .4s;pointer-events:none}
+.dish{position:absolute;left:0;top:0;border-radius:50%;background:rgba(255,255,255,.14);will-change:transform;cursor:pointer}
+.dish svg{position:absolute;left:-10%;top:-15%;width:120%;height:120%;display:block;transform-origin:50% 90%}
+.indicator{position:absolute;width:44px;height:6px;border-radius:3px;background:#000;pointer-events:none;z-index:2}
+.name{position:absolute;width:240px;text-align:center;color:#fff;font-size:16px;font-weight:600;line-height:1.2}
+.controls{position:absolute;left:0;right:0;text-align:center;color:#fff}
+.price{font-size:15px;line-height:1.2}
+.stepper{display:inline-flex;align-items:center;gap:16px;margin-top:6px;background:#fff;color:#111;border-radius:999px;padding:3px}
+.stepper button{width:32px;height:32px;border-radius:50%;border:0;background:#eef1ea;color:#111;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
+.stepper span{min-width:20px;font-size:16px;font-weight:600}
+.add{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;width:64%;height:60px;background:#000;color:#fff;border:0;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:5;transition:background .2s,transform .12s,box-shadow .12s;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.add:active{transform:translateX(-50%) scale(.94);box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.add.done{background:#1faa59;animation:pop .45s ease}
+.add .label{display:inline-flex;align-items:center;gap:6px}
+.tick{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .35s .05s ease forwards}
+@keyframes pop{0%{transform:translateX(-50%) scale(.94)}55%{transform:translateX(-50%) scale(1.07)}100%{transform:translateX(-50%) scale(1)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+.add .label{font-size:18px;font-weight:600}
+.add .sub{font-size:13px;opacity:.75}
+.add .sub:empty{display:none}
+.toast{position:absolute;left:50%;transform:translate(-50%,8px);background:rgba(20,20,20,.88);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:30;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* main product area: ends above the bottom card, 3D drag stays inside it */
+.top{position:absolute;top:20px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+.round{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;border:0;display:grid;place-items:center;transition:background .4s;cursor:pointer}
+.round svg{width:22px;height:22px}
+.stage{position:absolute;left:0;right:0;top:84px;bottom:calc(32% + 6px);display:flex;align-items:flex-start;justify-content:center;padding-top:8px;overflow:hidden}
+.holder{position:relative;width:100%;height:min(100%,460px);touch-action:none;cursor:grab}
+.arc{position:absolute;z-index:0;left:0;right:0;top:50%;height:46%;transform:translateY(-8%);pointer-events:none}
+.arc svg{width:100%;height:100%;display:block}
+.jar{position:absolute;inset:0;z-index:1}
+.jar canvas{width:100%;height:100%;display:block;touch-action:none}
+.nav{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:44px;height:44px;display:grid;place-items:center;color:var(--ink);background:none;border:0;cursor:pointer;transition:color .4s}
+.nav svg{width:22px;height:22px}
+.nav.prev{left:14px}.nav.next{right:14px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <button class="round" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M10 6l-6 6 6 6"/></svg></button>
+    <button class="round" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></svg></button>
+  </header>
+  <section class="stage">
+    <div class="holder" id="holder">
+      <div class="arc" aria-hidden="true"><svg viewBox="0 0 400 200" preserveAspectRatio="none"><path d="M0 40 Q200 190 400 20 L400 31 Q200 201 0 51 Z" fill="#fff"/></svg></div>
+      <button class="nav prev" id="prev" aria-label="Previous product"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M10 6l-6 6 6 6"/></svg></button>
+      <div class="jar" role="img" id="jarBox"><canvas id="gl"></canvas></div>
+      <button class="nav next" id="next" aria-label="Next product"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg></button>
+    </div>
+  </section>
+
+  <div class="circle" id="circle"></div>
+  <div class="indicator" id="indicator"></div>
+  <p class="name" id="name"></p>
+  <div class="controls" id="controls">
+    <p class="price" id="price"></p>
+    <div class="stepper">
+      <button id="minus" aria-label="Decrease quantity">&minus;</button>
+      <span id="qty">1</span>
+      <button id="plus" aria-label="Increase quantity">+</button>
+    </div>
+  </div>
+  <button class="add" id="addBtn">
+    <span class="label">Add To Order</span>
+    <span class="sub" id="sub"></span>
+  </button>
+  <div class="toast" id="toast"></div>
+  <input type="checkbox" switch id="hapticSwitch" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
+  <label for="hapticSwitch" id="hapticLabel" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></label>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const PRODUCTS = [
+  {name:'Blackberry Bubble Tea', price:25.00, tag:'BLACKBERRY FLAVOR', model:'', bg:'#bda9e3', card:'#5a2fb0', ink:'#2a0a6e', body:['#8f6fd0','#9c7fdc','#7a58bd'], cup:'#a88bdc', pearl:'#1a0f3a', fruit:'#1f1233'},
+  {name:'Mango Bubble Tea',     price:24.00, tag:'MANGO FLAVOR',     model:'', bg:'#f6c47e', card:'#c4560f', ink:'#5a1f00', body:['#ee9230','#f6a644','#d97a1a'], cup:'#fbb95a', pearl:'#3a1d0a', fruit:'#f4b400'},
+  {name:'Matcha Bubble Tea',    price:26.00, tag:'MATCHA FLAVOR',    model:'', bg:'#b8dca6', card:'#1f6b3d', ink:'#0f3d22', body:['#4f9a58','#63ad69','#3f8648'], cup:'#8ccf8f', pearl:'#12301c', fruit:'#2f6b3a'}
+];
+const N = PRODUCTS.length;
+const SPACING = 24;        // degrees between neighbouring drinks on the arc
+const BAR_H = 84;
+const SHOW_FRACTION = 0.32; // share of the screen height the green circle shows
+const PEAK_X = 0.67;        // horizontal position of the arc's peak, as a share of the width
+const RC_FACTOR = 0.8;      // big circle radius as a share of the width
+const ITEM_PX = 80;         // drag distance (px) that moves the arc by one drink
+
+const app = document.getElementById('app');
+const circle = document.getElementById('circle');
+const indicator = document.getElementById('indicator');
+const nameEl = document.getElementById('name');
+const controls = document.getElementById('controls');
+const priceEl = document.getElementById('price');
+const qtyEl = document.getElementById('qty');
+const subEl = document.getElementById('sub');
+const toast = document.getElementById('toast');
+const holder = document.getElementById('holder');
+const jarBox = document.getElementById('jarBox');
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let W = 0, Rc = 0, Ra = 0, D = 0, cardTop = 0, pcx = 0, pcy = 0;
+let g = 0, vel = 0, dragging = false, goalG = null;
+let lastX = 0, sx = 0, sy = 0, moved = 0, startI = null;
+let lastFront = -1, toastTimer = null;
+const qtys = PRODUCTS.map(() => 1);
+const order = new Map();
+const els = [];
+
+let uid = 0;
+function cupSVG(p) {
+  const g = 'g' + (++uid);
+  return '<svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="'+g+'" x1="0" x2="1"><stop offset="0" stop-color="'+p.body[0]+'"/><stop offset=".45" stop-color="'+p.body[1]+'"/><stop offset="1" stop-color="'+p.body[2]+'"/></linearGradient><linearGradient id="'+g+'l" x1="0" x2="1"><stop offset="0" stop-color="#1a1822"/><stop offset=".4" stop-color="#34323d"/><stop offset="1" stop-color="#121118"/></linearGradient></defs>'
+  +'<rect x="14" y="40" width="172" height="252" rx="26" fill="url(#'+g+')"/><rect x="6" y="14" width="188" height="48" rx="12" fill="url(#'+g+'l)"/><rect x="6" y="52" width="188" height="10" fill="#0d0c12" opacity=".5"/><rect x="26" y="52" width="14" height="230" rx="7" fill="#fff" opacity=".1"/>'
+  +'<g fill="#fff" font-family="Inter Tight,Arial,sans-serif" font-weight="700" text-anchor="middle"><text x="100" y="108" font-size="20" letter-spacing="1">BUBBLE TEA</text><text x="100" y="140" font-size="30">PROTEIN</text><text x="100" y="157" font-size="8" font-weight="600" letter-spacing="1.2" opacity=".9">'+p.tag+'</text></g>'
+  +'<path d="M70 184h60l-7 66a8 8 0 0 1-8 7H85a8 8 0 0 1-8-7z" fill="#fff" opacity=".85"/><path d="M72 200h56l-4 50a8 8 0 0 1-8 7H84a8 8 0 0 1-8-7z" fill="'+p.cup+'"/><rect x="66" y="178" width="68" height="9" rx="4.5" fill="#fff"/><rect x="104" y="160" width="6" height="26" rx="3" fill="'+p.pearl+'" transform="rotate(10 107 173)"/>'
+  +'<g fill="'+p.pearl+'"><circle cx="86" cy="244" r="5"/><circle cx="97" cy="248" r="5"/><circle cx="108" cy="245" r="5"/><circle cx="119" cy="248" r="5"/><circle cx="92" cy="238" r="5"/><circle cx="104" cy="239" r="5"/><circle cx="114" cy="238" r="4.5"/></g>'
+  +'<g fill="'+p.fruit+'"><circle cx="60" cy="262" r="12"/><circle cx="76" cy="272" r="11"/><circle cx="48" cy="276" r="10"/><circle cx="146" cy="268" r="11"/></g>'
+  +'<text x="132" y="286" fill="#fff" font-family="Inter Tight,Arial,sans-serif" font-weight="600" font-size="7.5" letter-spacing=".8" opacity=".9">NET WT. 450g</text></svg>';
+}
+
+/* ---------- 3D main product (drag to turn it: sides, back, top, bottom) ---------- */
+const FONT = '"Inter Tight",Arial,sans-serif';
+let gl = null, scene, camera, pivot, jarGroup, modelHolder, sideMat, botMat, lidTopMat;
+const poseQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.2, 0, 0.14));
+let avx = 0, avy = 0, spinning = false, slx = 0, sly = 0;
+
+function cnv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function circ(x, cx, cy, r, f) { x.fillStyle = f; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); }
+
+function drawFront(x, cx, p) {
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.font = '700 64px ' + FONT; x.fillText('BUBBLE TEA', cx, 140);
+  x.font = '700 118px ' + FONT; x.fillText('PROTEIN', cx, 252);
+  x.font = '600 26px ' + FONT; x.globalAlpha = .9; x.fillText(p.tag, cx, 298); x.globalAlpha = 1;
+  x.fillStyle = 'rgba(255,255,255,.88)'; x.beginPath();
+  x.moveTo(cx - 70, 400); x.lineTo(cx + 70, 400); x.lineTo(cx + 52, 592); x.lineTo(cx - 52, 592); x.closePath(); x.fill();
+  x.fillStyle = p.cup; x.beginPath();
+  x.moveTo(cx - 63, 440); x.lineTo(cx + 63, 440); x.lineTo(cx + 49, 586); x.lineTo(cx - 49, 586); x.closePath(); x.fill();
+  x.fillStyle = '#fff'; x.fillRect(cx - 82, 378, 164, 26);
+  x.fillStyle = p.pearl; x.fillRect(cx + 6, 318, 13, 70);
+  [[-30,562],[-10,570],[12,563],[32,570],[-20,546],[4,548],[24,546]].forEach(a => circ(x, cx + a[0], a[1], 13, p.pearl));
+  [[-150,560,32],[-108,584,28],[-170,596,24],[142,572,29]].forEach(a => circ(x, cx + a[0], a[1], a[2], p.fruit));
+  x.font = '600 20px ' + FONT; x.textAlign = 'left'; x.fillText('NET WT. 450g', cx + 105, 612);
+}
+function drawBack(x, cx) {
+  x.textAlign = 'center'; x.fillStyle = '#fff';
+  x.font = '700 48px ' + FONT; x.fillText('NUTRITION', cx, 120);
+  x.font = '700 120px ' + FONT; x.fillText('25g', cx, 255);
+  x.font = '600 32px ' + FONT; x.fillText('of Protein', cx, 305);
+  x.font = '700 40px ' + FONT; x.fillText('15 kcal per 100g', cx, 400);
+  x.fillText('100% Plant-Based', cx, 465);
+  x.font = '600 24px ' + FONT; x.globalAlpha = .85; x.fillText('BUBBLE TEA PROTEIN  \u00b7  450g', cx, 570); x.globalAlpha = 1;
+}
+function texSide(p) {
+  const [c, x] = cnv(1800, 630);
+  x.fillStyle = p.body[1]; x.fillRect(0, 0, 1800, 630);
+  drawFront(x, 900, p); drawBack(x, 0); drawBack(x, 1800);
+  return c;
+}
+function texBottom(p) {
+  const [c, x] = cnv(512, 512);
+  x.fillStyle = p.body[2]; x.fillRect(0, 0, 512, 512);
+  x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 4; x.beginPath(); x.arc(256, 256, 220, 0, 7); x.stroke();
+  x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.font = '700 54px ' + FONT; x.fillText('BUBBLE TEA', 256, 215);
+  x.font = '700 70px ' + FONT; x.fillText('PROTEIN', 256, 290);
+  x.font = '600 32px ' + FONT; x.fillText('NET WT. 450g', 256, 350);
+  return c;
+}
+function texLid() {
+  const [c, x] = cnv(512, 512);
+  x.fillStyle = '#1c1b22'; x.fillRect(0, 0, 512, 512);
+  x.strokeStyle = 'rgba(255,255,255,.12)'; x.lineWidth = 3;
+  [236, 200, 164].forEach(r => { x.beginPath(); x.arc(256, 256, r, 0, 7); x.stroke(); });
+  x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.font = '700 40px ' + FONT; x.fillText('BUBBLE TEA', 256, 250);
+  x.font = '700 48px ' + FONT; x.fillText('PROTEIN', 256, 306);
+  return c;
+}
+function mkTex(c) { const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; }
+function setMap(m, c) { if (m.map) m.map.dispose(); m.map = mkTex(c); m.needsUpdate = true; }
+function applyTextures(p) {
+  if (!gl) return;
+  setMap(sideMat, texSide(p)); setMap(botMat, texBottom(p)); setMap(lidTopMat, texLid());
+}
+
+function init3D() {
+  try {
+    const canvas = document.getElementById('gl');
+    gl = new THREE.WebGLRenderer({canvas, antialias: true, alpha: true});
+    gl.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    gl.outputEncoding = THREE.sRGBEncoding;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
+    scene.add(new THREE.AmbientLight(0xffffff, .8));
+    const key = new THREE.DirectionalLight(0xffffff, .85); key.position.set(2, 3, 4); scene.add(key);
+    const rim = new THREE.DirectionalLight(0xffffff, .45); rim.position.set(-3, -2, -3); scene.add(rim);
+
+    sideMat = new THREE.MeshStandardMaterial({roughness: .45, metalness: .05});
+    botMat = new THREE.MeshStandardMaterial({roughness: .5});
+    const topPlain = new THREE.MeshStandardMaterial({color: 0x8f6fd0, roughness: .5});
+    lidTopMat = new THREE.MeshStandardMaterial({roughness: .4});
+    const lidSide = new THREE.MeshStandardMaterial({color: 0x1c1b22, roughness: .4, metalness: .1});
+
+    const BH = 2.2, LH = .55;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, BH, 64, 1), [sideMat, topPlain, botMat]);
+    body.rotation.y = Math.PI;                       // label centre faces the camera
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(1.04, 1.04, LH, 64, 1), [lidSide, lidTopMat, lidSide]);
+    lid.position.y = BH / 2 + LH / 2 - .05;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1, .06, 16, 64), new THREE.MeshStandardMaterial({color: 0x7a58bd, roughness: .5}));
+    ring.rotation.x = Math.PI / 2; ring.position.y = -BH / 2;
+    jarGroup = new THREE.Group(); jarGroup.add(body, lid, ring); jarGroup.position.y = -.25;
+    modelHolder = new THREE.Group();
+    pivot = new THREE.Group(); pivot.add(jarGroup, modelHolder); pivot.quaternion.copy(poseQ); scene.add(pivot);
+    new ResizeObserver(fit3D).observe(holder);
+    fit3D();
+  } catch (err) { gl = null; }
+}
+function fit3D() {
+  if (!gl) return;
+  const w = holder.clientWidth, h = holder.clientHeight;
+  if (!w || !h) return;
+  gl.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  const v = 30 * Math.PI / 180, hf = 2 * Math.atan(Math.tan(v / 2) * camera.aspect);
+  camera.position.set(0, 0, 1.75 * 1.04 / Math.sin(Math.min(v, hf) / 2));   // whole turning jar stays inside the area
+}
+function spinBy(ax, ay) {
+  pivot.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, 0))).normalize();
+}
+holder.addEventListener('pointerdown', e => {
+  if (e.target.closest('button') || !gl) return;
+  spinning = true; avx = avy = 0; slx = e.clientX; sly = e.clientY;
+  holder.setPointerCapture(e.pointerId);
+});
+holder.addEventListener('pointermove', e => {
+  if (!spinning) return;
+  const ay = (e.clientX - slx) * .012, ax = (e.clientY - sly) * .012;
+  slx = e.clientX; sly = e.clientY;
+  spinBy(ax, ay);
+  avx = .6 * avx + .4 * ax; avy = .6 * avy + .4 * ay;
+});
+['pointerup', 'pointercancel'].forEach(t => holder.addEventListener(t, () => { spinning = false; }));
+
+// A drink with a .glb in its `model` field shows that file; with no file it shows the built-in jar.
+const modelCache = {};
+let gltfLoader = null;
+function showBuiltIn(on) { jarGroup.visible = on; if (on) modelHolder.clear(); }
+function useModel(wrap) { modelHolder.clear(); modelHolder.add(wrap); jarGroup.visible = false; }
+function loadModel(p) {
+  if (!gl) return;
+  if (!p.model || !THREE.GLTFLoader) { showBuiltIn(true); return; }
+  if (modelCache[p.model]) { useModel(modelCache[p.model]); return; }
+  showBuiltIn(false);
+  gltfLoader = gltfLoader || new THREE.GLTFLoader();
+  gltfLoader.load(p.model, gltf => {
+    const m = gltf.scene, sph = new THREE.Sphere();
+    new THREE.Box3().setFromObject(m).getBoundingSphere(sph);
+    m.position.sub(sph.center);                       // centre it so it turns around its middle
+    const wrap = new THREE.Group(); wrap.add(m);
+    wrap.scale.setScalar(1.6 / sph.radius);           // fit the turning model inside the product area
+    modelCache[p.model] = wrap;
+    if (PRODUCTS[lastFront] === p) useModel(wrap);
+  }, undefined, () => { if (PRODUCTS[lastFront] === p) showBuiltIn(true); });
+}
+
+// product + colours for whichever drink sits under the black indicator
+function setMain(fi, dir) {
+  const p = PRODUCTS[fi], r = document.documentElement.style;
+  r.setProperty('--bg', p.bg);
+  r.setProperty('--card', p.card);
+  r.setProperty('--ink', p.ink);
+  document.querySelector('meta[name=theme-color]').setAttribute('content', p.bg);
+  jarBox.setAttribute('aria-label', p.name + ' jar, 450 grams, drag to turn');
+  applyTextures(p);
+  if (gl) { pivot.quaternion.copy(poseQ); avx = avy = 0; }
+  loadModel(p);
+  if (dir && !REDUCED) {
+    document.getElementById('gl').animate([
+      {transform:'translateX(' + (dir * 70) + 'px)', opacity:0},
+      {transform:'none', opacity:1}
+    ], {duration:240, easing:'ease-out'});
+  }
+}
+init3D();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => applyTextures(PRODUCTS[Math.max(0, lastFront)]));
+
+PRODUCTS.forEach((p, i) => {
+  const el = document.createElement('div');
+  el.className = 'dish';
+  el.dataset.i = i;
+  el.innerHTML = cupSVG(p);
+  app.insertBefore(el, nameEl);
+  els.push(el);
+});
+
+function layout() {
+  const H = app.clientHeight;
+  W = app.clientWidth;
+  Rc = W * RC_FACTOR;
+  cardTop = H * (1 - SHOW_FRACTION);
+  // Big circle whose top edge is the drawn arc: its peak sits at PEAK_X.
+  pcx = W * PEAK_X;
+  pcy = cardTop + Rc;
+  circle.style.width = circle.style.height = (Rc * 2) + 'px';
+  circle.style.left = (pcx - Rc) + 'px';
+  circle.style.top = (pcy - Rc) + 'px';
+  indicator.style.left = (pcx - 22) + 'px';
+  indicator.style.top = (cardTop - 3) + 'px';
+
+  D = Math.min(64, W * 0.15);
+  Ra = Rc - D * 0.9 - 4;                      // drinks slide on the same arc, just inside it
+  els.forEach(el => { el.style.width = el.style.height = D + 'px'; });
+
+  // The name follows the top drink, the controls stay centred above Add To Order.
+  nameEl.style.left = (pcx - 120) + 'px';
+  nameEl.style.top = (cardTop + D + 26) + 'px';
+  controls.style.bottom = (BAR_H + 8) + 'px';
+  render();
+}
+
+function frontIndex() {
+  return Math.max(0, Math.min(N - 1, Math.round(g)));
+}
+
+function render() {
+  els.forEach((el, i) => {
+    const a = 90 + (i - g) * SPACING;        // 90 = top of the arc
+    const rad = a * Math.PI / 180;
+    const x = pcx + Ra * Math.cos(rad);
+    const y = pcy - Ra * Math.sin(rad);
+    const visible = a >= 0 && a <= 180 && x >= D / 2 && x <= W - D / 2;
+    el.style.opacity = visible ? '1' : '0';
+    el.style.pointerEvents = visible ? 'auto' : 'none';
+    el.style.transform = `translate3d(${x - D / 2}px,${y - D / 2}px,0)`;
+    el.firstChild.style.transform = `rotate(${(90 - a).toFixed(1)}deg)`;
+  });
+  const fi = frontIndex();
+  if (fi !== lastFront) {
+    const dir = lastFront < 0 ? 0 : Math.sign(fi - lastFront);
+    lastFront = fi;
+    tryHaptic(fi);
+    setMain(fi, dir);
+    nameEl.textContent = PRODUCTS[fi].name;
+    priceEl.textContent = `$${PRODUCTS[fi].price.toFixed(2)}`;
+  }
+  qtyEl.textContent = qtys[fi];
+}
+
+app.addEventListener('pointerdown', e => {
+  if (e.target.closest('button, .stage, .top')) return;   // the carousel only answers below the product area
+  dragging = true;
+  goalG = null;
+  vel = 0;
+  moved = 0;
+  sx = e.clientX;
+  sy = e.clientY;
+  lastX = e.clientX;
+  const d = e.target.closest('.dish');
+  startI = d ? +d.dataset.i : null;
+});
+
+window.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  lastX = e.clientX;
+  const dg = dx / ITEM_PX;                  // dragging right moves drinks right
+  g = Math.max(0, Math.min(N - 1, g + dg));
+  tryHaptic(frontIndex());
+  vel = 0.6 * vel + 0.4 * dg;
+  moved = Math.max(moved, Math.hypot(e.clientX - sx, e.clientY - sy));
+});
+
+window.addEventListener('pointerup', () => {
+  if (!dragging) return;
+  dragging = false;
+  if (moved < 8 && startI !== null) goalG = startI;
+  tryHaptic(goalG !== null ? goalG : frontIndex());
+  vel = 0;
+});
+
+function tick() {
+  if (!dragging) {
+    if (goalG !== null) {
+      g += (goalG - g) * 0.14;
+      if (Math.abs(goalG - g) < 0.01) { g = goalG; goalG = null; }
+    } else if (Math.abs(vel) > 0.01) {
+      g += vel;
+      vel *= 0.9;
+    } else {
+      vel = 0;
+      const t = Math.round(g);
+      g += (t - g) * 0.16;
+    }
+    if (g <= 0 || g >= N - 1) {
+      g = Math.max(0, Math.min(N - 1, g));
+      vel = 0;
+    }
+  }
+  if (gl) {
+    if (!spinning && !REDUCED && (Math.abs(avx) > .0008 || Math.abs(avy) > .0008)) {
+      spinBy(avx, avy); avx *= .965; avy *= .965;      // fast flick keeps turning, slow turn stops soon
+    }
+    gl.render(scene, camera);
+  }
+  render();
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('minus').addEventListener('click', () => {
+  const fi = frontIndex();
+  qtys[fi] = Math.max(1, qtys[fi] - 1);
+  render();
+});
+document.getElementById('plus').addEventListener('click', () => {
+  const fi = frontIndex();
+  qtys[fi] = Math.min(99, qtys[fi] + 1);
+  render();
+});
+document.getElementById('prev').addEventListener('click', () => { goalG = Math.max(0, frontIndex() - 1); tryHaptic(goalG); });
+document.getElementById('next').addEventListener('click', () => { goalG = Math.min(N - 1, frontIndex() + 1); tryHaptic(goalG); });
+
+function updateOrder() {
+  let items = 0, total = 0;
+  order.forEach((q, i) => { items += q; total += q * PRODUCTS[i].price; });
+  subEl.textContent = items
+    ? `${items} ${items === 1 ? 'item' : 'items'} · $${total.toFixed(2)}`
+    : '';
+}
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  const fi = frontIndex();
+  const q = qtys[fi];
+  order.set(fi, (order.get(fi) || 0) + q);
+  qtys[fi] = 1;
+  updateOrder();
+  showToast(`${q} × ${PRODUCTS[fi].name} added`);
+  render();
+  confirmPress();
+});
+
+let doneTimer = null;
+function confirmPress() {
+  const b = document.getElementById('addBtn');
+  const label = b.querySelector('.label');
+  label.innerHTML = '<svg class="tick" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Added';
+  b.classList.remove('done'); void b.offsetWidth; b.classList.add('done');
+  clearTimeout(doneTimer);
+  doneTimer = setTimeout(() => { b.classList.remove('done'); label.textContent = 'Add To Order'; }, 1500);
+  haptic();
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+}
+
+let hapticFront = -1;
+function tryHaptic(i) { if (i !== hapticFront) { hapticFront = i; haptic(); } }
+
+function haptic() {
+  if (navigator.vibrate) navigator.vibrate(8);
+  const l = document.getElementById('hapticLabel');
+  if (l) l.click();
+}
+
+window.addEventListener('resize', layout);
+layout();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
