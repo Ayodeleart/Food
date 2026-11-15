@@ -79,6 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 (async function () {
 const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
 /* Items for this category come from Supabase (menu_items); the built-in list below is the fallback. Category arrives as ?cat=<slug>. */
+const ngn = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 async function sbItems() {
   const cat = new URLSearchParams(location.search).get('cat'); if (!cat) return [];
   try {
@@ -114,7 +115,7 @@ function donut(d,seed){
  d.spr.forEach(c=>{for(let i=0;i<9;i++){const a=r()*Math.PI*2,R=36+r()*38,x=100+Math.cos(a)*R,y=100+Math.sin(a)*R;
   s+=`<rect x="${x-4}" y="${y-1.4}" width="8" height="2.8" rx="1.4" fill="${c}" transform="rotate(${r()*180} ${x} ${y})"/>`}});
  return `<svg viewBox="0 0 200 200" aria-hidden="true">${s}</svg>`}
-const money=v=>'$'+v.toFixed(2),pad=n=>String(n).padStart(2,'0');
+const money=v=>ngn(v),pad=n=>String(n).padStart(2,'0');
 /* quantity control: built once so the plus can slide open */
 function mkQ(el){
  el.innerHTML='<div class="q"><button class="mi" aria-label="Remove one">−</button><span class="n"></span><button class="pl" aria-label="Add one">+</button></div>';

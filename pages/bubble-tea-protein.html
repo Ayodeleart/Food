@@ -89,6 +89,8 @@ body{background:#8a8f88;display:flex;align-items:center;justify-content:center;f
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
+const ngn = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const PRODUCTS = [
   {name:'Blackberry Bubble Tea', price:25.00, tag:'BLACKBERRY FLAVOR', model:'', bg:'#bda9e3', card:'#5a2fb0', ink:'#2a0a6e', body:['#8f6fd0','#9c7fdc','#7a58bd'], cup:'#a88bdc', pearl:'#1a0f3a', fruit:'#1f1233'},
   {name:'Mango Bubble Tea',     price:24.00, tag:'MANGO FLAVOR',     model:'', bg:'#f6c47e', card:'#c4560f', ink:'#5a1f00', body:['#ee9230','#f6a644','#d97a1a'], cup:'#fbb95a', pearl:'#3a1d0a', fruit:'#f4b400'},
@@ -359,7 +361,7 @@ function render() {
     tryHaptic(fi);
     setMain(fi, dir);
     nameEl.textContent = PRODUCTS[fi].name;
-    priceEl.textContent = `$${PRODUCTS[fi].price.toFixed(2)}`;
+    priceEl.textContent = ngn(PRODUCTS[fi].price);
   }
   qtyEl.textContent = qtys[fi];
 }
@@ -441,7 +443,7 @@ function updateOrder() {
   let items = 0, total = 0;
   order.forEach((q, i) => { items += q; total += q * PRODUCTS[i].price; });
   subEl.textContent = items
-    ? `${items} ${items === 1 ? 'item' : 'items'} · $${total.toFixed(2)}`
+    ? `${items} ${items === 1 ? 'item' : 'items'} · ${ngn(total)}`
     : '';
 }
 

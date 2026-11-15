@@ -59,6 +59,7 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
 (async function () {
 const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
 /* Items for this category come from Supabase (menu_items); the built-in list below is the fallback. Category arrives as ?cat=<slug>. */
+const ngn = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 async function sbItems() {
   const cat = new URLSearchParams(location.search).get('cat'); if (!cat) return [];
   try {
@@ -176,7 +177,7 @@ function render() {
   const f = frontIndex();
   if (f !== lastFront) {
     lastFront = f;
-    focusEl.textContent = `${ITEMS[f].name} · $${ITEMS[f].price.toFixed(2)}`;
+    focusEl.textContent = `${ITEMS[f].name} · ${ngn(ITEMS[f].price)}`;
   }
 }
 
@@ -245,7 +246,7 @@ function updateCart() {
   let n = 0, total = 0;
   cart.forEach((q, i) => { n += q; total += q * ITEMS[i].price; });
   cartBtn.hidden = n === 0;
-  cartBtn.textContent = `Cart · ${n} · $${total.toFixed(2)}`;
+  cartBtn.textContent = `Cart · ${n} · ${ngn(total)}`;
   linesEl.innerHTML = '';
   if (n === 0) {
     const p = document.createElement('div');
@@ -260,7 +261,7 @@ function updateCart() {
     const a = document.createElement('span');
     a.textContent = `${q} × ${ITEMS[i].name}`;
     const b = document.createElement('span');
-    b.textContent = `$${(q * ITEMS[i].price).toFixed(2)}`;
+    b.textContent = `${ngn(q * ITEMS[i].price)}`;
     row.append(a, b);
     linesEl.appendChild(row);
   });
@@ -269,7 +270,7 @@ function updateCart() {
   const ta = document.createElement('span');
   ta.textContent = 'Total';
   const tb = document.createElement('span');
-  tb.textContent = `$${total.toFixed(2)}`;
+  tb.textContent = `${ngn(total)}`;
   t.append(ta, tb);
   linesEl.appendChild(t);
 }

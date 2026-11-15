@@ -47,6 +47,10 @@ label.chk{display:flex;gap:8px;align-items:center;margin:10px 0;font-weight:600}
 label.chk.sm{font-size:13px;margin:8px 0 0;color:var(--mut)}
 label.chk.sm input{width:18px;height:18px;margin:0}
 .muted{color:var(--mut);font-size:14px}
+#busy{position:fixed;inset:0;z-index:30;background:rgba(29,27,25,.6);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-weight:600;font-size:18px;text-align:center;padding:24px}
+#busy.on{display:flex}
+.spin{width:50px;height:50px;border-radius:50%;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:15px;max-width:90%;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
 #toast.show{opacity:1}
 #toast.err{background:#a8281a}
@@ -64,6 +68,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
 </header>
 <main id="view"></main>
 <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+<div id="busy" role="alert" aria-live="assertive"><div class="spin"></div><div id="busym">Uploading…</div><div style="font-size:14px;font-weight:500;opacity:.8">Please keep this page open</div></div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -83,6 +88,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   var imgs = {}, tab = 'pics', menuCat = CATS[0][0], pending = null, tt = 0;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function busy(m) { var b = document.getElementById('busy'); if (m) { document.getElementById('busym').textContent = m; b.className = 'on'; } else b.className = ''; }
   function toast(m, bad) { toastEl.textContent = m; toastEl.className = 'show' + (bad ? ' err' : ''); clearTimeout(tt); tt = setTimeout(function () { toastEl.className = ''; }, 3200); }
   function rest(path, o) {
     o = o || {};
@@ -143,7 +149,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     });
   }
   function store(path0, file, max, cut) {
-    return (cut ? (toast('Removing background…'), cutout(file)) : Promise.resolve(file)).then(function (src) { return prep(src, max); }).then(function (p) {
+    return (cut ? (busy('Removing background…'), cutout(file)) : Promise.resolve(file)).then(function (src) { busy('Uploading picture…'); return prep(src, max); }).then(function (p) {
       var path = path0 + '.' + p.ext;
       return fetch(URL_ + '/storage/v1/object/' + BUCKET + '/' + path, {
         method: 'POST',
@@ -189,7 +195,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
       '<label class="chk sm"><input type="checkbox" data-cut="' + key + '"' + (wantCut(key) ? ' checked' : '') + '> Remove background</label></div>';
   }
   function pics() {
-    var h = '<div class="note">No login yet: anyone with this page’s link can change pictures. Keep the link private until auth is added.</div><div class="note" style="background:#EEF6F0;border-color:#CFE5D5;color:#1f5a38">Backgrounds are removed automatically. The featured burger and drawer banner are left untouched for the 3D look; tick or untick “Remove background” under any picture to change that.</div>';
+    var h = '<div class="note">No login yet: anyone with this page’s link can change pictures. Keep the link private until auth is added.</div><div class="note" style="background:#EEF6F0;border-color:#CFE5D5;color:#1f5a38">Backgrounds are removed automatically. Today’s favorite and the drawer banner are left untouched for the 3D look; tick or untick “Remove background” under any picture to change that.</div>';
     ['Food', 'Drinks'].forEach(function (g) {
       h += '<h2>' + g + ' categories</h2><div class="grid">';
       CATS.filter(function (c) { return c[2] === g; }).forEach(function (c) {
@@ -197,7 +203,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
       });
       h += '</div>';
     });
-    h += '<h2>App pictures</h2><div class="grid"><div class="cat"><h3>Home</h3><div class="slots">' + slot('static/burger', 'Featured burger') + slot('static/hero', 'Drawer banner') + '</div></div></div>';
+    h += '<h2>App pictures</h2><div class="grid"><div class="cat"><h3>Home</h3><div class="slots">' + slot('static/burger', 'Today’s favorite') + slot('static/hero', 'Drawer banner (optional)') + '</div></div></div>';
     view.innerHTML = h;
   }
 
@@ -222,7 +228,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
 
   /* ---- Menu items ---- */
-  function usd(n) { return '$' + (Number(n) || 0).toFixed(2); }
+  function usd(n) { return '\u20A6' + (Number(n) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function menu() {
     var opts = CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === menuCat ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('');
     view.innerHTML = '<h2>Menu items</h2><select id="mcat">' + opts + '</select><label class="chk sm"><input type="checkbox" data-cut="items"' + (wantCut('items') ? ' checked' : '') + '> Remove background from item pictures (untick for 3D)</label><div id="mlist" class="card muted">Loading…</div>' +
@@ -272,8 +278,8 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   document.getElementById('tabs').addEventListener('click', function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-t'); if (t) show(t); });
   fileEl.addEventListener('change', function () {
     var f = fileEl.files[0], key = pending; fileEl.value = ''; if (!f || !key) return;
-    toast('Uploading…');
-    (key.indexOf('item:') === 0 ? uploadItem(key.slice(5), f) : upload(key, f)).then(function () { toast('Saved'); if (tab === 'pics') pics(); else if (tab === 'plate') plate(); else if (tab === 'menu') loadItems(); }).catch(function (e) { toast(e.message, true); });
+    busy('Preparing picture…');
+    (key.indexOf('item:') === 0 ? uploadItem(key.slice(5), f) : upload(key, f)).then(function () { busy(); toast('Saved'); if (tab === 'pics') pics(); else if (tab === 'plate') plate(); else if (tab === 'menu') loadItems(); }).catch(function (e) { busy(); toast(e.message, true); });
   });
   view.addEventListener('change', function (e) {
     var ck = e.target.getAttribute && e.target.getAttribute('data-cut');

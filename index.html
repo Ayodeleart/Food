@@ -30,8 +30,12 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 @keyframes grow{from{height:187px}to{height:270px}}
 @media (prefers-reduced-motion: reduce){.screen,.hero{animation:none!important}}
 
-.banner{position:relative;height:368px;background:#C34725;overflow:hidden}
-.banner img{position:absolute;left:0;bottom:0;width:100%;height:auto;display:block}
+.banner{position:relative;background:#C34725;overflow:hidden;padding:104px 16px 20px}
+.banner img{display:block;width:calc(100% + 32px);margin:18px -16px -20px;height:auto}
+.dq{display:block;width:100%;height:50px;border:0;border-radius:25px;padding:0 18px 0 48px;font-weight:600;font-size:17px;font-family:inherit;color:#1c2a25;background:#FFF3DB url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%238a5a2b' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 16px center;outline:none;-webkit-appearance:none;appearance:none}
+.dq::placeholder{color:#9a7a55}
+#dres{padding:4px 20px 28px}
+.timg{display:block;width:100%;height:120px;object-fit:contain;margin-bottom:10px}
 .hdr{position:absolute;left:8px;right:16px;top:44px;height:44px;display:flex;justify-content:space-between;align-items:center;z-index:2}
 .logo{position:absolute;left:0;right:0;top:44px;height:44px;display:flex;justify-content:center;align-items:center;pointer-events:none;z-index:1}
 .iconbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#FFF3DB}
@@ -238,12 +242,13 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function money(p) { return parseFloat(String(p).replace(/[^0-9.]/g, '')) || 0; }
+  function ngn(n) { return '\u20A6' + (Number(n) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function allItems() {
     var r = [];
     ORDER.forEach(function (k) { CATS[k].items.forEach(function (it, i) { r.push({ key: k + i, cat: k, it: it }); }); });
     return r;
   }
-  var FEATURED = { key: 'featured', cat: ORDER[7], it: { n: 'Double Double', p: '$12.99' } };
+  var FEATURED = { key: 'featured', cat: ORDER[7], live: false, it: { n: '', p: '' } };
   function find(key) { if (key === 'featured') return FEATURED; var a = allItems(); for (var i = 0; i < a.length; i++) if (a[i].key === key) return a[i]; }
   function hdr() {
     return '<div class="hdr"><button class="iconbtn" data-drawer="1" aria-label="Menu">' + ICON.burger + '</button>' +
@@ -266,7 +271,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     var c = CATS[state.cat];
     var tiles = c.items.map(function (it, i) {
       var key = state.cat + i, on = !!state.favs[key];
-      return '<div class="tile"><div class="trow"><div style="min-width:0"><div class="name">' + esc(it.n) + '</div><div class="sub">' + it.s + '</div></div>' +
+      return '<div class="tile">' + (it.img ? '<img class="timg" src="' + esc(it.img) + '" alt="" loading="lazy">' : '') + '<div class="trow"><div style="min-width:0"><div class="name">' + esc(it.n) + '</div><div class="sub">' + it.s + '</div></div>' +
         '<button class="heart' + (on ? ' on' : '') + '" data-fav="' + key + '" aria-label="Favorite" aria-pressed="' + on + '">' + heart(on) + '</button></div>' +
         '<div class="prow"><span class="price">' + it.p + '</span>' + (it.w ? '<span class="was">' + it.w + '</span><span class="badge">-12%</span>' : '') + '</div>' +
         '<button class="add" data-add="' + key + '">Add to cart</button></div>';
@@ -291,7 +296,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function cartHTML() {
     var total = 0;
     var rows = state.cart.map(function (k) { var f = find(k); total += money(f.it.p); return rowHTML(f); }).join('');
-    if (rows) rows += '<div class="lrow total"><span class="name">Total</span><span class="price">$' + total.toFixed(2) + '</span></div>';
+    if (rows) rows += '<div class="lrow total"><span class="name">Total</span><span class="price">' + ngn(total) + '</span></div>';
     return pageHTML('CART', rows || '<p class="empty">Your cart is empty. Add a dish from the menu.</p>', 'cart');
   }
   function resultsHTML(q) {
@@ -392,18 +397,21 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 
   /* Hamburger drawer: curved, slidable category carousel */
   function drawerHTML() {
-    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner"><img src="' + esc(IMGS['static/hero'] || 'images/hero.png') + '" alt="">' +
-      '<div class="logo">' + ICON.logo + '</div><button class="dclose" data-closedrawer="1" aria-label="Close menu">' + ICON2.close + '</button></div>' +
+    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner">' +
+      '<div class="logo">' + ICON.logo + '</div><button class="dclose" data-closedrawer="1" aria-label="Close menu">' + ICON2.close + '</button>' +
+      '<input id="dq" class="dq" type="search" placeholder="Search the menu" autocomplete="off" aria-label="Search the menu">' +
+      (IMGS['static/hero'] ? '<img src="' + esc(IMGS['static/hero']) + '" alt="">' : '') + '</div>' +
+      '<div id="dres" hidden></div><div id="dcats">' +
       ORDER.map(function (k, i) {
         var g = CATS[k].group, prev = i ? CATS[ORDER[i - 1]].group : 'Food';
         return (g !== prev ? '<div class="gtitle">' + esc(g) + '</div>' : '') + card(k);
-      }).join('') + '</div></div>';
+      }).join('') + '</div></div></div>';
   }
   function mgridHTML(cat) {
     var c = CATS[cat];
     if (!c.items.length) return '<p class="empty" style="grid-column:1/-1">No items yet.</p>';
     return c.items.map(function (it) {
-      return '<button class="dcard" data-open="' + cat + '"><b>' + esc(it.n) + '</b><small>' + it.p + '</small></button>';
+      return '<button class="dcard" data-open="' + cat + '">' + (it.img ? '<img src="' + esc(it.img) + '" alt="" loading="lazy">' : '') + '<b>' + esc(it.n) + '</b><small>' + it.p + '</small></button>';
     }).join('');
   }
   function mainHTML() {
@@ -414,8 +422,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     }
     return '<div class="screen" data-screen="main"><div class="scroll mscroll">' +
       '<div class="mhead"><div class="logo">' + ICON.logo + '</div>' + hdr() + '</div>' +
-      '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2><img src="' + esc(IMGS['static/burger'] || 'images/burger.png') + '" alt="">' +
-      '<div class="mpill"><div class="info"><span>' + esc(FEATURED.it.n) + '</span><span>' + FEATURED.it.p + '</span></div><button data-add="featured" aria-label="Add to cart">+</button></div></section>' +
+      (FEATURED.live ? '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2>' + (IMGS['static/burger'] ? '<img src="' + esc(IMGS['static/burger']) + '" alt="">' : '') +
+      '<div class="mpill"><div class="info"><span>' + esc(FEATURED.it.n) + '</span><span>' + FEATURED.it.p + '</span></div><button data-add="featured" aria-label="Add to cart">+</button></div></section>' : '') +
       '<div class="mcats"><div class="dtop" id="car"><svg class="arcsvg" id="arcsvg" aria-hidden="true"></svg><div class="dtitle" id="ctitle"></div>' + ic + '</div><div class="dgrid" id="mgrid" data-c=""></div></div>' +
       '</div>' + plateBubble() + nav('home') + '</div>';
   }
@@ -560,6 +568,12 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   app.addEventListener('pointercancel', endDrag);
   window.addEventListener('resize', function () { carShape(); carPlace(cpos); glideNav(false); });
   app.addEventListener('input', function (e) {
+    if (e.target.id === 'dq') {
+      var v = e.target.value, res = document.getElementById('dres'), cats = document.getElementById('dcats');
+      if (!res || !cats) return;
+      if (!v.trim()) { res.hidden = true; cats.hidden = false; } else { res.innerHTML = resultsHTML(v); res.hidden = false; cats.hidden = true; }
+      return;
+    }
     if (e.target.id === 'q') { state.q = e.target.value; document.getElementById('sres').innerHTML = resultsHTML(state.q); }
   });
   app.addEventListener('click', function (e) {
@@ -614,10 +628,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     return fetch(SB_URL + '/rest/v1/' + path, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
-  function usd(n) { return '$' + (Number(n) || 0).toFixed(2); }
   function loadMenu() {
     Promise.all([
-      sbGet('menu_items?select=category_id,name,price&order=created_at.asc').catch(function () { return []; }),
+      sbGet('menu_items?select=category_id,name,price,image_url&order=created_at.asc').catch(function () { return []; }),
       sbGet('menu_images?select=key,image_url').catch(function () { return []; }),
       sbGet('today_special?select=title,total_price&active=eq.true&order=created_at.desc&limit=1').catch(function () { return []; })
     ]).then(function (r) {
@@ -625,10 +638,10 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       items.forEach(function (row) {
         var c = CATS[row.category_id]; if (!c) return;
         if (!seen[row.category_id]) { seen[row.category_id] = 1; c.items = []; }
-        c.items.push({ n: row.name, s: '', p: usd(row.price) }); changed = true;
+        c.items.push({ n: row.name, s: '', p: ngn(row.price), img: row.image_url || '' }); changed = true;
       });
       imgs.forEach(function (row) { if (row.key && row.image_url) { IMGS[row.key] = row.image_url; changed = true; } });
-      if (sp[0] && sp[0].title) { FEATURED.it = { n: sp[0].title, p: usd(sp[0].total_price) }; changed = true; }
+      if (sp[0] && sp[0].title) { FEATURED.it = { n: sp[0].title, p: ngn(sp[0].total_price) }; FEATURED.live = true; changed = true; }
       if (changed) render();
     }).catch(function () {});
   }
