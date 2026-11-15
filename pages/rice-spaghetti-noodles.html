@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Food Menu</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%}
+body{background:#8fa866;display:flex;align-items:center;justify-content:center;font-family:"Open Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111}
+.app{position:relative;width:100%;max-width:430px;height:100dvh;background:#e8ebea;overflow:hidden;padding-top:env(safe-area-inset-top,0px);touch-action:none;user-select:none;-webkit-user-select:none}
+@media (min-width:600px){.app{height:min(880px,96dvh);border-radius:36px}}
+header{position:relative;z-index:6;text-align:center;padding:22px 18px 10px}
+header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
+.stage{position:absolute;inset:0;overflow:hidden}
+.arc{position:absolute;background:#000;border-radius:50%;pointer-events:none}
+.dish{position:absolute;left:0;top:0;width:100px;height:100px;border-radius:50%;will-change:transform;cursor:pointer}
+.dish img,.dish .ph{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;pointer-events:none}
+.dish .ph{border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#555}
+.pill{position:absolute;left:0;transform:translateY(-50%);background:#fff;color:#111;border:0;border-radius:0 999px 999px 0;padding:14px 26px 14px 20px;font-family:inherit;font-size:17px;font-weight:500;cursor:pointer;z-index:5}
+.focus{position:absolute;left:20px;width:150px;color:#fff;font-size:14px;line-height:1.35;z-index:4;pointer-events:none}
+.cart{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);background:#8ea35e;color:#fff;border:0;border-radius:999px;padding:14px 24px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:10;white-space:nowrap}
+.cart[hidden]{display:none}
+.toast{position:absolute;left:50%;bottom:100px;transform:translate(-50%,8px);background:rgba(20,20,20,.88);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:30;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 20px);max-height:60%;overflow:auto;z-index:20;box-shadow:0 -8px 30px rgba(0,0,0,.15)}
+.sheet[hidden]{display:none}
+.sheet h2{margin:0 0 8px;font-size:18px;font-weight:700}
+.line{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee;font-size:15px}
+.line.total{font-weight:700;border-bottom:0}
+.empty{color:#777;font-size:15px;padding:12px 0}
+.row{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;padding:13px;border-radius:12px;border:0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.btn.ghost{background:#eef1ea;color:#333}
+.btn.solid{background:#8ea35e;color:#fff}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header><h1 id="title"></h1></header>
+  <div class="stage" id="stage">
+    <div class="arc" id="arc"></div>
+    <button class="pill" id="pill"></button>
+    <div class="focus" id="focus"></div>
+  </div>
+  <button class="cart" id="cartBtn" hidden></button>
+  <div class="toast" id="toast"></div>
+  <div class="sheet" id="sheet" hidden>
+    <h2>Your cart</h2>
+    <div id="lines"></div>
+    <div class="row">
+      <button class="btn ghost" id="clearBtn">Clear</button>
+      <button class="btn solid" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   CONFIG: edit only this block.
+   - title:     heading shown at the top
+   - pillText:  label on the white tab
+   - items:     one entry per food.
+       name, price  -> shown under the centred item
+       image        -> transparent PNG (background removed).
+                       Paste a data URI here, for example
+                       "data:image/png;base64,iVBORw0KGgo..."
+                       Leave "" to show a placeholder until you add it.
+   ========================================================== */
+const CONFIG = {
+  title: "Food Menu",
+  pillText: "Select Food",
+  items: [
+    { name: "Item One",   price: 12.50, image: "" },
+    { name: "Item Two",   price: 11.00, image: "" },
+    { name: "Item Three", price: 11.50, image: "" },
+    { name: "Item Four",  price: 13.00, image: "" },
+    { name: "Item Five",  price: 12.00, image: "" },
+    { name: "Item Six",   price: 12.50, image: "" },
+    { name: "Item Seven", price: 12.00, image: "" },
+    { name: "Item Eight", price: 13.50, image: "" }
+  ],
+  rollImages: false,   // true = each item spins like a rolling wheel as it moves
+  enlargeCenter: true  // the item in the centre grows
+};
+/* ========================================================== */
+
+document.getElementById('title').textContent = CONFIG.title;
+const pill = document.getElementById('pill');
+pill.textContent = CONFIG.pillText;
+
+const ITEMS = CONFIG.items;
+const N = ITEMS.length;
+const STEP = 360 / N;
+
+const stage = document.getElementById('stage');
+const arc = document.getElementById('arc');
+const focusEl = document.getElementById('focus');
+const cartBtn = document.getElementById('cartBtn');
+const sheet = document.getElementById('sheet');
+const linesEl = document.getElementById('lines');
+const toast = document.getElementById('toast');
+
+let cx = 0, cy = 0, R = 0, D = 0;
+let rot = 0, vel = 0, dragging = false;
+let sx = 0, sy = 0, lastA = 0, moved = 0, startI = null;
+let lastFront = -1, toastTimer = null;
+const cart = new Map();
+const els = [];
+
+ITEMS.forEach((item, i) => {
+  const el = document.createElement('div');
+  el.className = 'dish';
+  el.dataset.i = i;
+  if (item.image) {
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = item.name;
+    img.draggable = false;
+    el.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'ph';
+    ph.textContent = item.name.charAt(0);
+    el.appendChild(ph);
+  }
+  stage.insertBefore(el, pill);
+  els.push(el);
+});
+
+function layout() {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  cx = 0;
+  cy = H / 2;
+  R = W * 0.66;
+  D = W * 0.37;
+  const rad = R * 1.03;
+  arc.style.left = (cx - rad) + 'px';
+  arc.style.top = (cy - rad) + 'px';
+  arc.style.width = arc.style.height = (rad * 2) + 'px';
+  pill.style.top = cy + 'px';
+  focusEl.style.top = (cy + 46) + 'px';
+  els.forEach(el => { el.style.width = el.style.height = D + 'px'; });
+  render();
+}
+
+function frontIndex() {
+  const k = Math.round(-rot / STEP);
+  return ((k % N) + N) % N;
+}
+
+function render() {
+  els.forEach((el, i) => {
+    const t = (i * STEP + rot) * Math.PI / 180;
+    const x = cx + R * Math.cos(t) - D / 2;
+    const y = cy + R * Math.sin(t) - D / 2;
+    const k = Math.max(0, Math.cos(t));
+    const s = CONFIG.enlargeCenter ? 1 + 0.5 * Math.pow(k, 4) : 1;
+    el.style.transform = `translate3d(${x}px,${y}px,0) scale(${s.toFixed(3)})`;
+    if (CONFIG.rollImages && el.firstChild) {
+      el.firstChild.style.transform = `rotate(${(-rot).toFixed(1)}deg)`;
+    }
+  });
+  const f = frontIndex();
+  if (f !== lastFront) {
+    lastFront = f;
+    focusEl.textContent = `${ITEMS[f].name} · $${ITEMS[f].price.toFixed(2)}`;
+  }
+}
+
+function angleOf(e) {
+  const r = stage.getBoundingClientRect();
+  return Math.atan2(e.clientY - r.top - cy, e.clientX - r.left - cx);
+}
+
+stage.addEventListener('pointerdown', e => {
+  dragging = true;
+  vel = 0;
+  moved = 0;
+  sx = e.clientX;
+  sy = e.clientY;
+  const d = e.target.closest('.dish');
+  startI = d ? +d.dataset.i : null;
+  lastA = angleOf(e);
+});
+
+window.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const a = angleOf(e);
+  let d = (a - lastA) * 180 / Math.PI;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  rot += d;
+  vel = 0.6 * vel + 0.4 * d;
+  lastA = a;
+  moved = Math.max(moved, Math.hypot(e.clientX - sx, e.clientY - sy));
+});
+
+window.addEventListener('pointerup', e => {
+  if (!dragging) return;
+  dragging = false;
+  if (moved < 8) {
+    if (startI !== null) addToCart(startI);
+    else if (e.target.closest && e.target.closest('#pill')) addToCart(frontIndex());
+  }
+});
+
+function tick() {
+  if (!dragging) {
+    if (Math.abs(vel) > 0.12) {
+      rot += vel;
+      vel *= 0.93;
+    } else {
+      vel = 0;
+      const t = Math.round(rot / STEP) * STEP;
+      rot += (t - rot) * 0.16;
+    }
+  }
+  if (Math.abs(rot) > 3600) rot %= 360;
+  render();
+  requestAnimationFrame(tick);
+}
+
+function addToCart(i) {
+  cart.set(i, (cart.get(i) || 0) + 1);
+  updateCart();
+  const el = els[i];
+  el.animate([{ filter: 'brightness(1.15)' }, { filter: 'brightness(1)' }], { duration: 300 });
+  showToast(`${ITEMS[i].name} added to cart`);
+}
+
+function updateCart() {
+  let n = 0, total = 0;
+  cart.forEach((q, i) => { n += q; total += q * ITEMS[i].price; });
+  cartBtn.hidden = n === 0;
+  cartBtn.textContent = `Cart · ${n} · $${total.toFixed(2)}`;
+  linesEl.innerHTML = '';
+  if (n === 0) {
+    const p = document.createElement('div');
+    p.className = 'empty';
+    p.textContent = 'Your cart is empty.';
+    linesEl.appendChild(p);
+    return;
+  }
+  cart.forEach((q, i) => {
+    const row = document.createElement('div');
+    row.className = 'line';
+    const a = document.createElement('span');
+    a.textContent = `${q} × ${ITEMS[i].name}`;
+    const b = document.createElement('span');
+    b.textContent = `$${(q * ITEMS[i].price).toFixed(2)}`;
+    row.append(a, b);
+    linesEl.appendChild(row);
+  });
+  const t = document.createElement('div');
+  t.className = 'line total';
+  const ta = document.createElement('span');
+  ta.textContent = 'Total';
+  const tb = document.createElement('span');
+  tb.textContent = `$${total.toFixed(2)}`;
+  t.append(ta, tb);
+  linesEl.appendChild(t);
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+}
+
+pill.addEventListener('click', e => e.stopPropagation());
+cartBtn.addEventListener('click', () => { sheet.hidden = !sheet.hidden; });
+document.getElementById('closeBtn').addEventListener('click', () => { sheet.hidden = true; });
+document.getElementById('clearBtn').addEventListener('click', () => {
+  cart.clear();
+  updateCart();
+  sheet.hidden = true;
+});
+
+window.addEventListener('resize', layout);
+updateCart();
+layout();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

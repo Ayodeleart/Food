@@ -118,6 +118,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .dcard{background:#fff;color:#1c2a25;border-radius:32px;padding:10px 8px 16px;text-align:center;box-shadow:0 10px 16px -6px rgba(120,80,0,.28);display:flex;flex-direction:column;align-items:center}
 .dcard img{width:100%;height:110px;object-fit:contain}
 .cic img{width:70%;height:70%;object-fit:contain;pointer-events:none}
+.catpage{position:absolute;top:0;left:0;right:0;bottom:0;z-index:40;background:#e8ebea}
+.catpage iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.subback{position:absolute;left:8px;top:calc(env(safe-area-inset-top,0px) + 12px);width:44px;height:44px;border-radius:22px;background:rgba(20,12,8,.5);color:#FFF3DB;display:flex;align-items:center;justify-content:center;z-index:2}
 .gtitle{padding:22px 40px 10px;font-size:26px;font-weight:700;color:#2A211B;letter-spacing:.5px;text-transform:uppercase}
 .dcard b{margin-top:8px;font-size:18px}
 .dcard small{font-size:12px;font-weight:600;opacity:.7}
@@ -221,7 +224,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     ORDER.forEach(function (k) { CATS[k].items.forEach(function (it, i) { r.push({ key: k + i, cat: k, it: it }); }); });
     return r;
   }
-  function find(key) { var a = allItems(); for (var i = 0; i < a.length; i++) if (a[i].key === key) return a[i]; }
+  var FEATURED = { key: 'featured', cat: ORDER[7], it: { n: 'Double Double', p: '$12.99' } };
+  function find(key) { if (key === 'featured') return FEATURED; var a = allItems(); for (var i = 0; i < a.length; i++) if (a[i].key === key) return a[i]; }
   function hdr() {
     return '<div class="hdr"><button class="iconbtn" data-drawer="1" aria-label="Menu">' + ICON.burger + '</button>' +
       '<button class="iconbtn avatar" data-profile="1" aria-label="Profile">' + ICON2.user + '</button></div>';
@@ -303,7 +307,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 
   /* Hamburger drawer: curved, slidable category carousel */
   function drawerHTML() {
-    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner">' +
+    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner"><img src="images/hero.png" alt="">' +
       '<div class="logo">' + ICON.logo + '</div><button class="dclose" data-closedrawer="1" aria-label="Close menu">' + ICON2.close + '</button></div>' +
       ORDER.map(function (k, i) {
         var g = CATS[k].group, prev = i ? CATS[ORDER[i - 1]].group : 'Food';
@@ -325,6 +329,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     }
     return '<div class="screen" data-screen="main"><div class="scroll mscroll">' +
       '<div class="mhead"><div class="logo">' + ICON.logo + '</div>' + hdr() + '</div>' +
+      '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2><img src="images/burger.png" alt="">' +
+      '<div class="mpill"><div class="info"><span>' + esc(FEATURED.it.n) + '</span><span>' + FEATURED.it.p + '</span></div><button data-add="featured" aria-label="Add to cart">+</button></div></section>' +
       '<div class="mcats"><div class="dtop" id="car"><svg class="arcsvg" id="arcsvg" aria-hidden="true"></svg><div class="dtitle" id="ctitle"></div>' + ic + '</div><div class="dgrid" id="mgrid" data-c=""></div></div>' +
       '</div>' + nav('home') + '</div>';
   }
@@ -377,6 +383,17 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     if (document.getElementById('drawer')) return;
     app.insertAdjacentHTML('beforeend', drawerHTML());
   }
+  /* Categories that open their own page instead of the default category screen */
+  var PAGES = { 'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html' };
+  function openCat(k) {
+    if (PAGES[k]) {
+      if (document.getElementById('catpage')) return;
+      app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage"><iframe src="' + PAGES[k] + '" title="' + esc(CATS[k].label) + '"></iframe>' +
+        '<button class="subback" data-closesub="1" aria-label="Back">' + ICON.back + '</button></div>');
+      return;
+    }
+    state.screen = 'menu'; state.cat = k; render();
+  }
   function closeDrawer() { var d = document.getElementById('drawer'); if (d) d.parentNode.removeChild(d); }
 
   app.addEventListener('pointerdown', function (e) {
@@ -421,13 +438,14 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
         var o = t.getAttribute('data-open'), f = t.getAttribute('data-fav'), a = t.getAttribute('data-add'), g = t.getAttribute('data-go'), ci = t.getAttribute('data-ci');
         if (t.getAttribute('data-drawer')) { openDrawer(); return; }
         if (t.getAttribute('data-closedrawer')) { closeDrawer(); return; }
+        if (t.getAttribute('data-closesub')) { var sb = document.getElementById('catpage'); if (sb) sb.parentNode.removeChild(sb); return; }
         if (ci !== null) {
           if (justDragged) return;
           var k = +ci;
-          if (k === car) { state.screen = 'menu'; state.cat = ORDER[k % N]; render(); } else { carAnimate(k); }
+          if (k === car) { openCat(ORDER[k % N]); } else { carAnimate(k); }
           return;
         }
-        if (o) { state.screen = 'menu'; state.cat = o; render(); return; }
+        if (o) { openCat(o); return; }
         if (g) { state.screen = g === 'home' ? 'main' : g; render(); if (g === 'search') { var q = document.getElementById('q'); if (q) q.focus(); } return; }
         if (a) {
           state.cart.push(a); updBadge();
