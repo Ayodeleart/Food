@@ -88,11 +88,15 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .scroll.menu{bottom:0}
 .scroll.menu .grid{padding-bottom:130px}
 .avatar{border-radius:22px;background:rgba(20,12,8,.32)}
-.glass{background:linear-gradient(135deg,rgba(70,48,36,.62),rgba(28,18,13,.42));-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%);border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 -1px 2px rgba(255,255,255,.1),0 10px 28px rgba(30,16,8,.35)}
+.glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.02) 45%,rgba(255,255,255,.12)),rgba(38,24,16,.42);-webkit-backdrop-filter:blur(16px) saturate(200%);backdrop-filter:blur(16px) saturate(200%);border:1px solid rgba(255,255,255,.38);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.7),inset -1.5px -1.5px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.12),0 12px 32px rgba(25,12,5,.32),0 2px 8px rgba(25,12,5,.2)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(130% 100% at 18% -10%,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),radial-gradient(90% 80% at 90% 120%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%)}
+.gglide{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:30px;pointer-events:none;background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.14));-webkit-backdrop-filter:blur(6px) saturate(180%);backdrop-filter:blur(6px) saturate(180%);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.85),inset -1px -1px 1px rgba(255,255,255,.35),0 4px 12px rgba(25,12,5,.25)}
 .dock{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) * .3 + 4px);display:flex;gap:12px;z-index:5}
 .gnav{flex:1;height:66px;border-radius:33px;padding:6px;display:flex;box-sizing:border-box}
-.gb{flex:1;position:relative;display:flex;align-items:center;justify-content:center;border-radius:27px;color:#FFF3DB;transition:background .25s}
-.gb.on,.sbtn.on{background:rgba(255,255,255,.22);box-shadow:inset 0 1px 1px rgba(255,255,255,.5)}
+.gb{flex:1;position:relative;display:flex;align-items:center;justify-content:center;border-radius:27px;color:#FFF3DB;transition:transform .2s}
+.gb:active{transform:scale(.9)}
+.sbtn.on{background:rgba(255,255,255,.26);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.75)}
+.gb svg,.sbtn svg{position:relative}
 .gbadge{position:absolute;top:6px;right:calc(50% - 26px);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#C34725;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .sbtn{width:66px;height:66px;border-radius:33px;flex:none;display:flex;align-items:center;justify-content:center;color:#FFF3DB}
 .phead{height:150px;background:#C34725;color:#FFF3DB;font-size:44px;font-weight:700;display:flex;align-items:flex-end;padding:0 40px 18px;box-sizing:border-box}
@@ -196,10 +200,10 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   var ICON = {
     arrow: '<svg width="22" height="12" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h16M14 3l5 5-5 5"/></svg>',
     bag: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
-    bag24: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+    bag24: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 2H3.74001C4.82001 2 5.67 2.93 5.58 4L4.75 13.96C4.61 15.59 5.89999 16.99 7.53999 16.99H18.19C19.63 16.99 20.89 15.81 21 14.38L21.54 6.88C21.66 5.22 20.4 3.87 18.73 3.87H5.82001" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M16.25 22C16.9404 22 17.5 21.4404 17.5 20.75C17.5 20.0596 16.9404 19.5 16.25 19.5C15.5596 19.5 15 20.0596 15 20.75C15 21.4404 15.5596 22 16.25 22Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M8.25 22C8.94036 22 9.5 21.4404 9.5 20.75C9.5 20.0596 8.94036 19.5 8.25 19.5C7.55964 19.5 7 20.0596 7 20.75C7 21.4404 7.55964 22 8.25 22Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M9 8H21" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     burger: '<svg width="26" height="20" viewBox="0 0 26 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M3 3h20M3 10h20M3 17h20"/></svg>',
     back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
-    home: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg>',
+    home: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.0693 2.81984L3.13929 8.36983C2.35929 8.98983 1.85929 10.2999 2.02929 11.2799L3.35929 19.2398C3.59929 20.6598 4.95928 21.8098 6.39928 21.8098H17.5993C19.0293 21.8098 20.3993 20.6498 20.6393 19.2398L21.9693 11.2799C22.1293 10.2999 21.6293 8.98983 20.8593 8.36983L13.9293 2.82985C12.8593 1.96985 11.1293 1.96984 10.0693 2.81984Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M12 15.5C13.3807 15.5 14.5 14.3807 14.5 13C14.5 11.6193 13.3807 10.5 12 10.5C10.6193 10.5 9.5 11.6193 9.5 13C9.5 14.3807 10.6193 15.5 12 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     fork: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a3 3 0 0 0 6 0V3M9 3v18"/><path d="M17 21V3c-2.5 1.5-3.5 4-3.5 7.5H17"/></svg>',
     logo: '<svg width="38" height="46" viewBox="0 0 38 46" fill="none" stroke="#FBEBCB" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17C5 9 11 4 19 4s14 5 14 13z"/><path d="M5 21h28"/><path d="M5 37h28v1c0 4-4 6-8 6H13c-4 0-8-2-8-6z"/><text x="19" y="33" text-anchor="middle" fill="#FBEBCB" stroke="none" font-size="7.6" font-weight="700" style="font-family:\'Saira Semi Condensed\',sans-serif;letter-spacing:.2px">BURGER</text></svg>'
   };
@@ -210,10 +214,10 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     return '<button class="cartbtn" aria-label="Cart">' + ICON.bag + '<span class="cartn">(' + state.cart + ')</span><span class="cw">CART</span></button>';
   }
   var ICON2 = {
-    search: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
-    user: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>',
+    search: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M22 22L20 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    user: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path opacity="0.4" d="M12.1207 12.78C12.0507 12.77 11.9607 12.77 11.8807 12.78C10.1207 12.72 8.7207 11.28 8.7207 9.50998C8.7207 7.69998 10.1807 6.22998 12.0007 6.22998C13.8107 6.22998 15.2807 7.69998 15.2807 9.50998C15.2707 11.28 13.8807 12.72 12.1207 12.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.34" d="M18.7398 19.3801C16.9598 21.0101 14.5998 22.0001 11.9998 22.0001C9.39977 22.0001 7.03977 21.0101 5.25977 19.3801C5.35977 18.4401 5.95977 17.5201 7.02977 16.8001C9.76977 14.9801 14.2498 14.9801 16.9698 16.8001C18.0398 17.5201 18.6398 18.4401 18.7398 19.3801Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     close: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-    fav: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'
+    fav: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path opacity="0.4" d="M9.20046 14.78L11.7805 17.04C11.9005 17.15 12.0905 17.15 12.2105 17.04L14.7905 14.78C15.4605 14.19 15.5505 13.19 14.9905 12.49C14.4305 11.79 13.4105 11.66 12.7005 12.2L12.0005 12.74L11.2905 12.21C10.5705 11.67 9.56046 11.8 9.00046 12.5C8.44046 13.19 8.53046 14.2 9.20046 14.78Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 11V17C22 21 21 22 17 22H7C3 22 2 21 2 17V7C2 3 3 2 7 2H8.5C10 2 10.33 2.44 10.9 3.2L12.4 5.2C12.78 5.7 13 6 14 6H17C21 6 22 7 22 11Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10"/></svg>'
   };
   var N = ORDER.length, car = 3 * ORDER.length, cpos = 3 * ORDER.length, raf = 0, drag = null, justDragged = false;
 
@@ -235,7 +239,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       var badge = id === 'cart' ? '<span class="gbadge"' + (state.cart.length ? '' : ' hidden') + '>' + state.cart.length + '</span>' : '';
       return '<button class="gb' + (active === id ? ' on' : '') + '" data-go="' + id + '" aria-label="' + l + '">' + ic + badge + '</button>';
     }
-    return '<nav class="dock"><div class="gnav glass">' + b('home', ICON.home, 'Home') + b('favs', ICON2.fav, 'Favorite') + b('cart', ICON.bag24, 'Cart') + '</div>' +
+    return '<nav class="dock"><div class="gnav glass"><span class="gglide"></span>' + b('home', ICON.home, 'Home') + b('favs', ICON2.fav, 'Favorite') + b('cart', ICON.bag24, 'Cart') + '</div>' +
       '<button class="sbtn glass' + (active === 'search' ? ' on' : '') + '" data-go="search" aria-label="Search">' + ICON2.search + '</button></nav>';
   }
   function card(k) {
@@ -291,12 +295,30 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     document.documentElement.style.background = 'linear-gradient(to bottom,' + top + ' 50%,' + bottom + ' 50%)';
   }
   var lastScreen = null;
+  var navRect = null;
+  function glideNav(animate) {
+    var g = app.querySelector('.gglide'), nv = app.querySelector('.gnav'); if (!g || !nv) { navRect = null; return; }
+    var on = nv.querySelector('.gb.on');
+    if (!on) { g.style.opacity = 0; navRect = null; return; }
+    var l = on.offsetLeft + 3, w = on.offsetWidth - 6;
+    g.style.left = l + 'px'; g.style.width = w + 'px'; g.style.opacity = 1;
+    if (animate !== false && navRect && navRect.l !== l && !REDUCED) {
+      var a = Math.min(navRect.l, l), b = Math.max(navRect.l + navRect.w, l + w);
+      g.animate([
+        { left: navRect.l + 'px', width: navRect.w + 'px' },
+        { left: a + 'px', width: (b - a) + 'px', offset: .42 },
+        { left: l + 'px', width: w + 'px' }
+      ], { duration: 560, easing: 'cubic-bezier(.3,1.3,.5,1)' });
+    }
+    navRect = { l: l, w: w };
+  }
   function render() {
     var s = state.screen;
     var sc = app.querySelector('.scroll'), keep = (sc && lastScreen === s + state.cat) ? sc.scrollTop : 0;
     lastScreen = s + state.cat;
     app.innerHTML = s === 'main' ? mainHTML() : s === 'menu' ? menuHTML() : s === 'favs' ? favsHTML() : s === 'cart' ? cartHTML() : searchHTML();
     ground();
+    glideNav();
     if (keep) { var n = app.querySelector('.scroll'); if (n) n.scrollTop = keep; }
     if (document.getElementById('car')) { carShape(); carPlace(cpos); }
   }
@@ -469,7 +491,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   }
   app.addEventListener('pointerup', endDrag);
   app.addEventListener('pointercancel', endDrag);
-  window.addEventListener('resize', function () { carShape(); carPlace(cpos); });
+  window.addEventListener('resize', function () { carShape(); carPlace(cpos); glideNav(false); });
   app.addEventListener('input', function (e) {
     if (e.target.id === 'q') { state.q = e.target.value; document.getElementById('sres').innerHTML = resultsHTML(state.q); }
   });
