@@ -366,7 +366,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 
   /* Hamburger drawer: curved, slidable category carousel */
   function drawerHTML() {
-    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner"><img src="images/hero.png" alt="">' +
+    return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner"><img src="' + esc(IMGS['static/hero'] || 'images/hero.png') + '" alt="">' +
       '<div class="logo">' + ICON.logo + '</div><button class="dclose" data-closedrawer="1" aria-label="Close menu">' + ICON2.close + '</button></div>' +
       ORDER.map(function (k, i) {
         var g = CATS[k].group, prev = i ? CATS[ORDER[i - 1]].group : 'Food';
@@ -388,7 +388,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     }
     return '<div class="screen" data-screen="main"><div class="scroll mscroll">' +
       '<div class="mhead"><div class="logo">' + ICON.logo + '</div>' + hdr() + '</div>' +
-      '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2><img src="images/burger.png" alt="">' +
+      '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2><img src="' + esc(IMGS['static/burger'] || 'images/burger.png') + '" alt="">' +
       '<div class="mpill"><div class="info"><span>' + esc(FEATURED.it.n) + '</span><span>' + FEATURED.it.p + '</span></div><button data-add="featured" aria-label="Add to cart">+</button></div></section>' +
       '<div class="mcats"><div class="dtop" id="car"><svg class="arcsvg" id="arcsvg" aria-hidden="true"></svg><div class="dtitle" id="ctitle"></div>' + ic + '</div><div class="dgrid" id="mgrid" data-c=""></div></div>' +
       '</div>' + nav('home') + '</div>';
