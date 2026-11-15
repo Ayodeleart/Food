@@ -76,6 +76,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   <div class="toast" id="toast"></div>
 </div>
 <script>
+(async function () {
+const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+/* Items for this category come from Supabase (menu_items); the built-in list below is the fallback. Category arrives as ?cat=<slug>. */
+async function sbItems() {
+  const cat = new URLSearchParams(location.search).get('cat'); if (!cat) return [];
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch(SB + '/rest/v1/menu_items?select=name,price,image_url&category_id=eq.' + encodeURIComponent(cat) + '&order=created_at.asc', { headers: { apikey: SBK, Authorization: 'Bearer ' + SBK }, signal: ctl.signal });
+    clearTimeout(t); return r.ok ? await r.json() : [];
+  } catch (e) { return []; }
+}
 /* Add a snack with a PNG: {n:'Chips',p:1.5,img:'snacks/chips.png',nut:[['Salt','1g',2],['Sugar','0g',0],['Fat','8g',11],['Energy','150kcal',30]]}
    Optional: bg:'#hex', acc:'#hex'. If left out they are picked from the image's own colours. */
 const D=[
@@ -85,6 +96,7 @@ const D=[
  {n:'Blue Frost',p:2.4,base:'#d9a064',ice:'#3bb8d8',dr:null,spr:['#f2b6ff','#fff','#ffd45e','#ff6b81'],bg:'#c8d7dc',acc:'#aee4f3',nut:[['Salt','7g',3],['Sugar','13g',8],['Fat','9g',12],['Energy','220kcal',44]]},
  {n:'Pink Sprinkle',p:2.4,base:'#d9a064',ice:'#ee3f8f',dr:null,spr:['#fff','#7fdc9b','#6ac4ff','#ffd45e','#b98cff'],bg:'#e1c5cf',acc:'#f6b6d0',nut:[['Salt','8g',3],['Sugar','8g',7],['Fat','6g',12],['Energy','180kcal',40]]}
 ];
+{ const rows = await sbItems(); if (rows.length) { D.length = 0; rows.forEach(r => D.push(r.image_url ? { n: r.name, p: Number(r.price), img: r.image_url, nut: [] } : { n: r.name, p: Number(r.price), base: '#d9a064', ice: '#ee3f8f', dr: null, spr: ['#fff', '#ffd45e'], bg: '#e1c5cf', acc: '#f6b6d0', nut: [] })); } }
 const $=id=>document.getElementById(id),app=$('app'),N=D.length;
 const qty=D.map(()=>0);let cur=0,det=false;
 function rnd(s){return()=>(s=(s*16807)%2147483647)/2147483647}
@@ -144,7 +156,7 @@ function prep(d,el){
    o.toBlob(b=>{img.src=b?URL.createObjectURL(b):d.img});
   }catch(e){img.src=d.img}
   if(D[cur]===d)render()};
- src.src=d.img}
+ src.crossOrigin='anonymous';src.onerror=()=>{img.src=d.img};src.src=d.img}
 const stage=$('stage'),items=D.map((d,i)=>{const el=document.createElement('div');el.className='item';el.innerHTML=d.img?'<img alt="" draggable="false">':donut(d,i+1);stage.appendChild(el);if(d.img)prep(d,el);return el});
 let pos=0,vel=0,target=0,raf=0,last=0,drag=null;
 const sp=()=>app.clientWidth*.49;
@@ -206,6 +218,7 @@ addEventListener('resize',()=>{if(!det)layout()});
 $('cta').onclick=()=>{const n=qty[cur];$('toast').textContent=n+' × '+D[cur].n+' added to cart';
  $('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1600);qty[cur]=0;upd()};
 render();layout();
+})();
 </script>
 </body>
 </html>

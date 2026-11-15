@@ -56,6 +56,17 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
 </div>
 
 <script>
+(async function () {
+const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+/* Items for this category come from Supabase (menu_items); the built-in list below is the fallback. Category arrives as ?cat=<slug>. */
+async function sbItems() {
+  const cat = new URLSearchParams(location.search).get('cat'); if (!cat) return [];
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch(SB + '/rest/v1/menu_items?select=name,price,image_url&category_id=eq.' + encodeURIComponent(cat) + '&order=created_at.asc', { headers: { apikey: SBK, Authorization: 'Bearer ' + SBK }, signal: ctl.signal });
+    clearTimeout(t); return r.ok ? await r.json() : [];
+  } catch (e) { return []; }
+}
 /* ==========================================================
    CONFIG: edit only this block.
    - title:     heading shown at the top
@@ -85,6 +96,7 @@ const CONFIG = {
 };
 /* ========================================================== */
 
+{ const rows = await sbItems(); if (rows.length) CONFIG.items = rows.map(r => ({ name: r.name, price: Number(r.price), image: r.image_url || '' })); }
 document.getElementById('title').textContent = CONFIG.title;
 const pill = document.getElementById('pill');
 pill.textContent = CONFIG.pillText;
@@ -282,6 +294,7 @@ window.addEventListener('resize', layout);
 updateCart();
 layout();
 requestAnimationFrame(tick);
+})();
 </script>
 </body>
 </html>

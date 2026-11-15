@@ -461,7 +461,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     origin.y = ev && ev.clientY != null ? ev.clientY - box.top : box.height / 2;
     var far = Math.hypot(Math.max(origin.x, box.width - origin.x), Math.max(origin.y, box.height - origin.y)) + 4;
     app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage" style="background:' + CATS[k].bg + ';clip-path:' + circleAt(0) + '">' +
-      '<iframe src="' + PAGES[k] + '" title="' + esc(CATS[k].label) + '" style="opacity:0"></iframe>' +
+      '<iframe src="' + PAGES[k] + '?cat=' + k + '" title="' + esc(CATS[k].label) + '" style="opacity:0"></iframe>' +
       '<button class="subback" data-closesub="1" aria-label="Close" style="opacity:0">' + ICON2.close + '</button></div>');
     var pg = document.getElementById('catpage'), fr = pg.querySelector('iframe'), bk = pg.querySelector('.subback');
     var t0 = performance.now(), loaded = false, shown = false;
