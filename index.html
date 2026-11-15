@@ -197,8 +197,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
      images/posters/<slug>.png  -> poster shown in the hamburger menu and on the category page
      images/icons/<slug>.png    -> placeholder shown in the sliding category carousel
      Until a file exists, that slot is simply empty. */
+  var IMGS = {};
   function pic(kind, slug, cls) {
-    return '<img class="' + cls + '" src="images/' + kind + '/' + slug + '.png" alt="" onerror="this.style.display=\'none\'">';
+    return '<img class="' + cls + '" src="' + esc(IMGS[kind + '/' + slug] || ('images/' + kind + '/' + slug + '.png')) + '" alt="" onerror="this.style.display=\'none\'">';
   }
 
   var ICON = {
@@ -570,6 +571,35 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     }
   });
   render();
+
+  /* Supabase (project: Everyday life). Publishable key only; safe to ship in the browser.
+     Reads: menu_items (category_id = category slug), menu_images (key = "posters/<slug>" or "icons/<slug>"),
+     today_special (latest active row). Images live in the public "food-menu" bucket.
+     If anything fails, the built-in menu above is used unchanged. */
+  var SB_URL = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SB_KEY = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+  function sbGet(path) {
+    return fetch(SB_URL + '/rest/v1/' + path, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  function usd(n) { return '$' + (Number(n) || 0).toFixed(2); }
+  function loadMenu() {
+    Promise.all([
+      sbGet('menu_items?select=category_id,name,price&order=created_at.asc').catch(function () { return []; }),
+      sbGet('menu_images?select=key,image_url').catch(function () { return []; }),
+      sbGet('today_special?select=title,total_price&active=eq.true&order=created_at.desc&limit=1').catch(function () { return []; })
+    ]).then(function (r) {
+      var items = r[0], imgs = r[1], sp = r[2], seen = {}, changed = false;
+      items.forEach(function (row) {
+        var c = CATS[row.category_id]; if (!c) return;
+        if (!seen[row.category_id]) { seen[row.category_id] = 1; c.items = []; }
+        c.items.push({ n: row.name, s: '', p: usd(row.price) }); changed = true;
+      });
+      imgs.forEach(function (row) { if (row.key && row.image_url) { IMGS[row.key] = row.image_url; changed = true; } });
+      if (sp[0] && sp[0].title) { FEATURED.it = { n: sp[0].title, p: usd(sp[0].total_price) }; changed = true; }
+      if (changed) render();
+    }).catch(function () {});
+  }
+  loadMenu();
   if ('serviceWorker' in navigator) var hadSW = !!navigator.serviceWorker.controller, reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadSW && !reloaded) { reloaded = true; location.reload(); } });
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {}); });
