@@ -95,6 +95,16 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .gclone .gb{transition:none;pointer-events:none}
 .gglide::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 1px 2px 2px -1px rgba(255,255,255,.75),inset -1px -2px 2px -1px rgba(255,255,255,.35),inset 5px 0 6px -4px rgba(255,70,200,.5),inset -5px 0 6px -4px rgba(70,225,255,.6),inset 0 5px 7px -5px rgba(255,235,120,.4),inset 0 -5px 7px -5px rgba(130,205,255,.45)}
 .gnav .gb{z-index:1}
+.pb{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) * .3 + 4px + 66px + 16px);z-index:6;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+.pbbtn{pointer-events:auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 26%,#fff,rgba(255,255,255,.78) 55%,rgba(255,240,214,.7));-webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);border:1px solid rgba(255,255,255,.85);box-shadow:inset 2px 2px 3px rgba(255,255,255,.95),inset -3px -4px 8px rgba(195,71,37,.18),0 12px 26px rgba(30,16,8,.32),0 2px 6px rgba(30,16,8,.2);animation:pbfloat 3.6s ease-in-out infinite;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+.pbbtn svg{width:36px;height:36px;display:block;color:#000}
+.pbbtn:active{transform:scale(.9)}
+.pb.open .pbbtn{animation:none;transform:rotate(-8deg) scale(1.06)}
+@keyframes pbfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.pbopts{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.pbopt{pointer-events:none;opacity:0;transform:translateY(18px) scale(.7);transform-origin:100% 100%;transition:opacity .2s,transform .35s cubic-bezier(.3,1.5,.5,1);transition-delay:calc(var(--i) * 40ms);padding:11px 22px;border-radius:999px;font-size:17px;font-weight:600;color:#2A211B;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,247,230,.82));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.9);box-shadow:inset 1.5px 1.5px 2px rgba(255,255,255,.95),0 8px 18px rgba(30,16,8,.28)}
+.pb.open .pbopt{pointer-events:auto;opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.pbbtn{animation:none}}
 .dock{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) * .3 + 4px);display:flex;gap:12px;z-index:5}
 .gnav{flex:1;height:66px;border-radius:33px;padding:6px;display:flex;box-sizing:border-box}
 .gb{flex:1;position:relative;display:flex;align-items:center;justify-content:center;border-radius:27px;color:#FFF3DB;transition:transform .2s}
@@ -364,6 +374,22 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     for (var i = 0; i < bs.length; i++) { bs[i].textContent = state.cart.length; bs[i].hidden = !state.cart.length; }
   }
 
+  /* Floating bubble: tap to choose what to build a plate from */
+  var PLATE_ICON = '<svg viewBox="0 0 502 502" aria-hidden="true"><g id="SVGRepo_iconCarrier"> <g> <g> <g> <path d="M46.175,156.04c-5.523,0-10-4.477-10-10v-13.247c0-5.523,4.477-10,10-10s10,4.477,10,10v13.247 C56.175,151.563,51.698,156.04,46.175,156.04z"></path> </g> <g> <path d="M454.296,395.512c-5.522,0-10-4.477-10-10V132.793c0-5.523,4.478-10,10-10s10,4.477,10,10v252.719 C464.296,391.035,459.818,395.512,454.296,395.512z"></path> </g> <path d="M82.351,120.755c-5.523,0-10,4.477-10,10v57.065c0,12.193-7.394,22.5-16.176,22.604v-34.833c0-5.523-4.477-10-10-10 s-10,4.477-10,10v34.833C27.393,210.32,20,200.013,20,187.82v-57.065c0-5.523-4.477-10-10-10s-10,4.477-10,10v57.065 c0,23.442,16.216,42.519,36.175,42.605v155.086c0,5.523,4.477,10,10,10s10-4.477,10-10V230.425 c19.959-0.085,36.176-19.163,36.176-42.605v-57.065C92.351,125.232,87.874,120.755,82.351,120.755z"></path> <path style="fill:#EBD2B4;" d="M492,293.799h-37.704V132.793l2.666,3.746C479.753,168.57,492,206.906,492,246.219V293.799z"></path> <path d="M492,303.799h-37.704c-5.522,0-10-4.477-10-10V132.793c0-4.351,2.813-8.202,6.956-9.525 c4.144-1.326,8.669,0.183,11.191,3.727l2.666,3.746C489.243,164.66,502,204.591,502,246.219V293.8 C502,299.322,497.522,303.799,492,303.799z M464.296,283.799H482v-37.581c0-27.212-6.061-53.621-17.704-77.731V283.799z"></path> </g> <g> <circle style="fill:#EBD2B4;" cx="264.247" cy="251" r="153.873"></circle> <path d="M264.247,414.873c-90.36,0-163.873-73.513-163.873-163.873S173.887,87.127,264.247,87.127S428.12,160.64,428.12,251 S354.607,414.873,264.247,414.873z M264.247,107.127c-79.332,0-143.873,64.541-143.873,143.873s64.541,143.873,143.873,143.873 S408.12,330.332,408.12,251S343.579,107.127,264.247,107.127z"></path> </g> <g> <g> <path style="fill:#FF2E3D;" d="M306.108,191.313c-19.769,0-36.388,13.463-41.203,31.72c-4.815-18.256-21.434-31.72-41.203-31.72 c-23.535,0-42.614,19.079-42.614,42.614s25.972,44.598,42.614,61.24c20.743,20.743,41.203,39.51,41.203,39.51 s21.589-19.896,41.203-39.51c16.642-16.642,42.614-37.705,42.614-61.24C348.722,210.392,329.643,191.313,306.108,191.313z"></path> <path d="M264.905,344.677c-2.424,0-4.848-0.876-6.76-2.63c-0.206-0.189-20.858-19.152-41.515-39.808 c-2.296-2.296-4.786-4.689-7.421-7.223c-16.984-16.325-38.121-36.642-38.121-61.089c0-29.012,23.603-52.614,52.614-52.614 c16.421,0,31.445,7.621,41.204,19.887c9.758-12.266,24.781-19.887,41.203-19.887c29.011,0,52.613,23.603,52.613,52.614 c0,24.448-21.138,44.765-38.121,61.089c-2.636,2.533-5.125,4.926-7.421,7.222c-19.533,19.532-41.28,39.592-41.497,39.792 C269.768,343.795,267.337,344.677,264.905,344.677z M223.702,201.313c-17.983,0-32.614,14.631-32.614,32.614 c0,15.93,17.732,32.975,31.981,46.669c2.709,2.604,5.268,5.063,7.704,7.5c13.212,13.212,26.427,25.725,34.123,32.924 c7.901-7.403,21.501-20.284,34.142-32.925c2.437-2.436,4.995-4.895,7.704-7.499c14.248-13.695,31.98-30.739,31.98-46.67 c0-17.983-14.63-32.614-32.613-32.614c-14.798,0-27.766,9.98-31.534,24.27c-1.157,4.391-5.128,7.45-9.669,7.45 c-4.54,0-8.511-3.059-9.669-7.45C251.467,211.293,238.5,201.313,223.702,201.313z"></path> </g> </g> <g> <path d="M217.376,150.236c-3.895,0-7.597-2.289-9.212-6.101c-2.155-5.085,0.221-10.954,5.306-13.109 c16.085-6.816,33.169-10.271,50.776-10.271c14.756,0,29.239,2.451,43.046,7.284c5.213,1.825,7.959,7.53,6.135,12.743 c-1.825,5.213-7.532,7.96-12.742,6.134c-11.679-4.088-23.938-6.161-36.438-6.161c-14.912,0-29.37,2.922-42.974,8.687 C220,149.981,218.677,150.236,217.376,150.236z"></path> </g> <g> <path d="M168.451,188.303c-2.109,0-4.235-0.665-6.044-2.039c-4.397-3.342-5.252-9.616-1.91-14.013 c5.229-6.878,11.168-13.265,17.653-18.982c4.143-3.652,10.462-3.254,14.114,0.888c3.652,4.143,3.255,10.462-0.888,14.114 c-5.495,4.845-10.527,10.255-14.956,16.083C174.453,186.942,171.469,188.303,168.451,188.303z"></path> </g> </g> </g></svg>';
+  function plateBubble() {
+    return '<div class="pb" id="pb"><div class="pbopts">' +
+      [['rice', 'Rice'], ['swallow', 'Swallow'], ['beans', 'Beans']].map(function (d, i) {
+        return '<button class="pbopt" data-plate="' + d[0] + '" style="--i:' + (2 - i) + '">' + d[1] + '</button>';
+      }).join('') + '</div><button class="pbbtn" data-pb="1" aria-label="Build a plate" aria-expanded="false">' + PLATE_ICON + '</button></div>';
+  }
+  function closePB() { var b = document.getElementById('pb'); if (b) { b.classList.remove('open'); b.querySelector('.pbbtn').setAttribute('aria-expanded', 'false'); } }
+  function openPlate(d, ev) {
+    closePB();
+    openPage('pages/plate-builder.html?dish=' + d, '#eef0f4', ev, 'Build a plate', function (w) {
+      w.addEventListener('plate:back', closeCat); return true;
+    });
+  }
+
   /* Hamburger drawer: curved, slidable category carousel */
   function drawerHTML() {
     return '<div class="drawer" id="drawer"><div class="dpanel dlight"><div class="banner"><img src="' + esc(IMGS['static/hero'] || 'images/hero.png') + '" alt="">' +
@@ -391,7 +417,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       '<section class="mhero"><small>Today\u2019s favorite</small><h2>' + esc(FEATURED.it.n) + '</h2><img src="' + esc(IMGS['static/burger'] || 'images/burger.png') + '" alt="">' +
       '<div class="mpill"><div class="info"><span>' + esc(FEATURED.it.n) + '</span><span>' + FEATURED.it.p + '</span></div><button data-add="featured" aria-label="Add to cart">+</button></div></section>' +
       '<div class="mcats"><div class="dtop" id="car"><svg class="arcsvg" id="arcsvg" aria-hidden="true"></svg><div class="dtitle" id="ctitle"></div>' + ic + '</div><div class="dgrid" id="mgrid" data-c=""></div></div>' +
-      '</div>' + nav('home') + '</div>';
+      '</div>' + plateBubble() + nav('home') + '</div>';
   }
   function carShape() {
     var el = document.getElementById('car'), sv = document.getElementById('arcsvg'); if (!el || !sv) return;
@@ -455,13 +481,16 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function circleAt(r) { return 'circle(' + r + 'px at ' + origin.x + 'px ' + origin.y + 'px)'; }
   function openCat(k, ev) {
     if (!PAGES[k]) { state.screen = 'menu'; state.cat = k; render(); return; }
+    openPage(PAGES[k] + '?cat=' + k, CATS[k].bg, ev, CATS[k].label);
+  }
+  function openPage(src, bg, ev, label, wire) {
     if (document.getElementById('catpage')) return;
     var box = app.getBoundingClientRect();
     origin.x = ev && ev.clientX != null ? ev.clientX - box.left : box.width / 2;
     origin.y = ev && ev.clientY != null ? ev.clientY - box.top : box.height / 2;
     var far = Math.hypot(Math.max(origin.x, box.width - origin.x), Math.max(origin.y, box.height - origin.y)) + 4;
-    app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage" style="background:' + CATS[k].bg + ';clip-path:' + circleAt(0) + '">' +
-      '<iframe src="' + PAGES[k] + '?cat=' + k + '" title="' + esc(CATS[k].label) + '" style="opacity:0"></iframe>' +
+    app.insertAdjacentHTML('beforeend', '<div class="catpage" id="catpage" style="background:' + bg + ';clip-path:' + circleAt(0) + '">' +
+      '<iframe src="' + src + '" title="' + esc(label) + '" style="opacity:0"></iframe>' +
       '<button class="subback" data-closesub="1" aria-label="Close" style="opacity:0">' + ICON2.close + '</button></div>');
     var pg = document.getElementById('catpage'), fr = pg.querySelector('iframe'), bk = pg.querySelector('.subback');
     var t0 = performance.now(), loaded = false, shown = false;
@@ -477,6 +506,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       try {   // the bubble tea page has its own back button: use it, and hide ours
         var own = fr.contentDocument.querySelector('.top .round[aria-label="Back"]');
         if (own) { own.addEventListener('click', closeCat); bk.hidden = true; }
+        if (wire && wire(fr.contentWindow)) bk.hidden = true;
       } catch (_) {}
       setTimeout(reveal, Math.max(0, 300 - (performance.now() - t0)));
     });
@@ -534,9 +564,12 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   });
   app.addEventListener('click', function (e) {
     var t = e.target;
+    if (!(t.closest && t.closest('#pb'))) closePB();
     while (t && t !== app) {
       if (t.getAttribute) {
         var o = t.getAttribute('data-open'), f = t.getAttribute('data-fav'), a = t.getAttribute('data-add'), g = t.getAttribute('data-go'), ci = t.getAttribute('data-ci');
+        if (t.getAttribute('data-pb')) { var pbx = document.getElementById('pb'), op = pbx.classList.toggle('open'); t.setAttribute('aria-expanded', String(op)); return; }
+        if (t.getAttribute('data-plate')) { openPlate(t.getAttribute('data-plate'), e); return; }
         if (t.getAttribute('data-drawer')) { openDrawer(); return; }
         if (t.getAttribute('data-closedrawer')) { closeDrawer(); return; }
         if (t.getAttribute('data-closesub')) { closeCat(); return; }

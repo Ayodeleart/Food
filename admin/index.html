@@ -57,6 +57,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   <h1>Burger Admin</h1>
   <div class="tabs" id="tabs">
     <button data-t="pics" class="on">Pictures</button>
+    <button data-t="plate">Plate builder</button>
     <button data-t="menu">Menu items</button>
     <button data-t="special">Today’s special</button>
   </div>
@@ -200,6 +201,26 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     view.innerHTML = h;
   }
 
+  /* ---- Plate builder pictures (key "plate/<id>"; the plate page reads these) ---- */
+  var PLATE = [
+    ['Swallow', [['eba', 'Eba'], ['amala', 'Amala'], ['pounded', 'Pounded yam'], ['fufu', 'Fufu'], ['semo', 'Semo']]],
+    ['Rice', [['jollof', 'Jollof rice'], ['white', 'White rice'], ['fried', 'Fried rice']]],
+    ['Beans', [['beans', 'Beans']]],
+    ['Soups', [['egusi', 'Egusi'], ['efo', 'Efo riro'], ['ogbono', 'Ogbono'], ['okra', 'Okra'], ['ewedu', 'Ewedu'], ['gbegiri', 'Gbegiri']]],
+    ['Proteins', [['beef', 'Beef'], ['goat', 'Goat meat'], ['ponmo', 'Ponmo'], ['shaki', 'Shaki'], ['fish', 'Fish'], ['chicken', 'Chicken'], ['turkey', 'Turkey'], ['egg', 'Boiled egg']]],
+    ['Extras', [['pepper', 'Pepper sauce'], ['plantain', 'Plantain'], ['moimoi', 'Moi moi'], ['slaw', 'Coleslaw']]],
+    ['Plate and trays', [['plate', 'Plate'], ['tray', 'Tray (swallow)'], ['tray-rice', 'Tray (rice and beans)']]]
+  ];
+  function plate() {
+    var h = '<div class="note" style="background:#EEF6F0;border-color:#CFE5D5;color:#1f5a38">Upload a photo of each food. The background is removed automatically. Anything without a picture shows a coloured circle on the plate page.</div>';
+    PLATE.forEach(function (g) {
+      h += '<h2>' + esc(g[0]) + '</h2><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">';
+      g[1].forEach(function (it) { h += '<div class="cat"><h3>' + esc(it[1]) + '</h3>' + slot('plate/' + it[0], 'Picture') + '</div>'; });
+      h += '</div>';
+    });
+    view.innerHTML = h;
+  }
+
   /* ---- Menu items ---- */
   function usd(n) { return '$' + (Number(n) || 0).toFixed(2); }
   function menu() {
@@ -245,14 +266,14 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   function show(t) {
     tab = t;
     [].forEach.call(document.querySelectorAll('#tabs button'), function (b) { b.classList.toggle('on', b.getAttribute('data-t') === t); });
-    (t === 'pics' ? pics : t === 'menu' ? menu : special)();
+    (t === 'pics' ? pics : t === 'plate' ? plate : t === 'menu' ? menu : special)();
   }
 
   document.getElementById('tabs').addEventListener('click', function (e) { var t = e.target.getAttribute && e.target.getAttribute('data-t'); if (t) show(t); });
   fileEl.addEventListener('change', function () {
     var f = fileEl.files[0], key = pending; fileEl.value = ''; if (!f || !key) return;
     toast('Uploading…');
-    (key.indexOf('item:') === 0 ? uploadItem(key.slice(5), f) : upload(key, f)).then(function () { toast('Saved'); if (tab === 'pics') pics(); else if (tab === 'menu') loadItems(); }).catch(function (e) { toast(e.message, true); });
+    (key.indexOf('item:') === 0 ? uploadItem(key.slice(5), f) : upload(key, f)).then(function () { toast('Saved'); if (tab === 'pics') pics(); else if (tab === 'plate') plate(); else if (tab === 'menu') loadItems(); }).catch(function (e) { toast(e.message, true); });
   });
   view.addEventListener('change', function (e) {
     var ck = e.target.getAttribute && e.target.getAttribute('data-cut');
@@ -266,7 +287,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     if (b.hasAttribute('data-ipicrm') && iid) { b.disabled = true; clearItem(iid, irow.getAttribute('data-img')).then(function () { toast('Cleared'); loadItems(); }).catch(function (x) { toast(x.message, true); b.disabled = false; }); return; }
     var up = b.getAttribute('data-up'), rm = b.getAttribute('data-rm');
     if (up) { pending = up; fileEl.click(); return; }
-    if (rm) { if (confirm('Remove this picture?')) { b.disabled = true; removeImg(rm).then(function () { toast('Removed'); pics(); }).catch(function (x) { toast(x.message, true); b.disabled = false; }); } return; }
+    if (rm) { if (confirm('Remove this picture?')) { b.disabled = true; removeImg(rm).then(function () { toast('Removed'); show(tab); }).catch(function (x) { toast(x.message, true); b.disabled = false; }); } return; }
     var row = b.closest('.row'), id = row && row.getAttribute('data-id');
     if (b.hasAttribute('data-save') && id) {
       var n = row.querySelector('.n').value.trim(), p = parseFloat(row.querySelector('.p').value);
