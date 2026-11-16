@@ -21,6 +21,7 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
 .focus{position:absolute;left:20px;width:150px;color:#fff;font-size:14px;line-height:1.35;z-index:4;pointer-events:none}
 .cart{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translateX(-50%);background:#8ea35e;color:#fff;border:0;border-radius:999px;padding:14px 24px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:10;white-space:nowrap}
 .cart[hidden]{display:none}
+.cart,.sheet{display:none!important}
 .toast{position:absolute;left:50%;bottom:100px;transform:translate(-50%,8px);background:rgba(20,20,20,.88);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:30;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 20px);max-height:60%;overflow:auto;z-index:20;box-shadow:0 -8px 30px rgba(0,0,0,.15)}
@@ -45,7 +46,7 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
 .app.det .back{opacity:1;transform:none;pointer-events:auto;transition:opacity .4s .45s,transform .5s .45s}
 .app.det .dtitle{opacity:1;transform:none;transition:opacity .4s .4s,transform .5s .4s}
 .app.det .chip{opacity:1;transform:none;transition:opacity .4s calc(.4s + var(--i)*.08s),transform .55s cubic-bezier(.34,1.4,.64,1) calc(.4s + var(--i)*.08s)}
-.bar{position:absolute;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;gap:10px;z-index:26;transform:translateY(160%);transition:transform .35s}
+.bar{position:absolute;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px + var(--ckh,0px));display:flex;gap:10px;z-index:26;transform:translateY(160%);transition:transform .35s}
 .app.det .bar{transform:none;transition:transform .6s cubic-bezier(.34,1.56,.64,1) .5s}
 .cta{flex:1;height:50px;border-radius:25px;border:0;background:#8ea35e;color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .total{min-width:112px;padding:0 14px;height:50px;border-radius:25px;background:#fff;display:grid;place-items:center;font-weight:700;white-space:nowrap}
@@ -78,6 +79,7 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
   </div>
 </div>
 
+<script src="../checkout.js"></script>
 <script>
 (async function () {
 const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
@@ -290,6 +292,7 @@ function tick() {
 function addToCart(i) {
   cart.set(i, (cart.get(i) || 0) + 1);
   updateCart();
+  Checkout.add({ key: 'r:' + ITEMS[i].name, n: ITEMS[i].name, p: ITEMS[i].price, img: ITEMS[i].image || '' }, 1, document.getElementById('addBtn'));
   const el = els[i];
   el.animate([{ filter: 'brightness(1.15)' }, { filter: 'brightness(1)' }], { duration: 300 });
   showToast(`${ITEMS[i].name} added to cart`);
@@ -385,6 +388,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 });
 
 window.addEventListener('resize', layout);
+Checkout.init();
 updateCart();
 layout();
 requestAnimationFrame(tick);

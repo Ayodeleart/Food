@@ -226,6 +226,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   fit(); window.addEventListener('resize', fit); window.addEventListener('orientationchange', fit);
 })();
 </script>
+<script src="checkout.js"></script>
 <script>
 (function () {
   var CATS = {};
@@ -277,7 +278,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     return '<svg width="22" height="22" viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
   }
   function cart() {
-    return '<button class="cartbtn" aria-label="Cart">' + ICON.bag + '<span class="cartn">(' + state.cart + ')</span><span class="cw">CART</span></button>';
+    return '<button class="cartbtn" aria-label="Cart">' + ICON.bag + '<span class="cartn">(' + Checkout.count() + ')</span><span class="cw">CART</span></button>';
   }
   var ICON2 = {
     search: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path opacity="0.4" d="M22 22L20 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -304,7 +305,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   }
   function nav(active) {
     function b(id, ic, l) {
-      var badge = id === 'cart' ? '<span class="gbadge"' + (state.cart.length ? '' : ' hidden') + '>' + state.cart.length + '</span>' : '';
+      var badge = id === 'cart' ? '<span class="gbadge"' + (Checkout.count() ? '' : ' hidden') + '>' + Checkout.count() + '</span>' : '';
       return '<button class="gb' + (active === id ? ' on' : '') + '" data-go="' + id + '" aria-label="' + l + '">' + ic + badge + '</button>';
     }
     return '<nav class="dock"><div class="gnav glass"><span class="gglide"></span>' + b('home', ICON.home, 'Home') + b('favs', ICON2.fav, 'Favorite') + b('cart', ICON.bag24, 'Cart') + '</div>' +
@@ -423,9 +424,14 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     if (document.getElementById('car')) { carShape(); carPlace(cpos); }
     if (s === 'product' && state.ptab === 'reviews') loadReviews();
   }
+  function addToCk(key, qty, from) {
+    var f = find(key); if (!f) return;
+    var p = f.it.pn != null ? f.it.pn : parseFloat(String(f.it.p).replace(/[^0-9.]/g, '')) || 0;
+    Checkout.add({ key: 'm:' + key, n: f.it.n, p: p, img: f.it.img || '' }, qty, from);
+  }
   function updBadge() {
     var bs = app.querySelectorAll('.gbadge');
-    for (var i = 0; i < bs.length; i++) { bs[i].textContent = state.cart.length; bs[i].hidden = !state.cart.length; }
+    for (var i = 0; i < bs.length; i++) { bs[i].textContent = Checkout.count(); bs[i].hidden = !Checkout.count(); }
   }
 
   /* Floating bubble: tap to choose what to build a plate from */
@@ -595,7 +601,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   var PAGES = {
     'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html',
     'burgers-sandwiches-shawarma': 'pages/dunuts.html',
-    'small-chops-snacks': 'pages/dunuts.html'
+    'pizza': 'pages/dunuts.html',
+    'small-chops-snacks': 'pages/small-chops.html'
   };
   ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -714,8 +721,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
         }
         if (t.getAttribute('data-padd')) {
           if (t.disabled) return;
-          for (var qi = 0; qi < state.qty; qi++) state.cart.push(state.prod);
-          updBadge(); t.textContent = 'Added \u2713'; setTimeout(function () { t.textContent = 'Add to Cart'; }, 1200); return;
+          addToCk(state.prod, state.qty, t); t.textContent = 'Added \u2713'; setTimeout(function () { t.textContent = 'Add to Cart'; }, 1200); return;
         }
         if (t.getAttribute('data-drawer')) { openDrawer(); return; }
         if (t.getAttribute('data-closedrawer')) { closeDrawer(); return; }
@@ -727,9 +733,10 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
           return;
         }
         if (o) { openCat(o, e); return; }
+        if (g === 'cart') { Checkout.open(); return; }
         if (g) { state.screen = g === 'home' ? 'main' : g; render(); if (g === 'search') { var q = document.getElementById('q'); if (q) q.focus(); } return; }
         if (a) {
-          state.cart.push(a); updBadge();
+          addToCk(a, 1, t);
           if (t.classList.contains('add')) {
             t.textContent = 'Added'; t.className = 'add done';
             setTimeout(function () { t.textContent = 'Add to cart'; t.className = 'add'; }, 1200);
@@ -750,6 +757,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       t = t.parentNode;
     }
   });
+  Checkout.init({ bar: false }); Checkout.onChange(function () { updBadge(); });
   render();
 
   /* Supabase (project: Everyday life). Publishable key only; safe to ship in the browser.

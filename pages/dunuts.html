@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .q .n{position:absolute;left:40px;right:40px;top:0;height:40px;line-height:40px;text-align:center;font-weight:500;opacity:0;transition:opacity .25s}
 .q.open .n{opacity:1;transition-delay:.14s}
 #app.det .q{pointer-events:none}
-.bar{position:absolute;left:18px;right:18px;bottom:24px;display:flex;gap:10px;transform:translateY(160%);transition:transform .55s cubic-bezier(.34,1.56,.64,1);z-index:10}
+.bar{position:absolute;left:18px;right:18px;bottom:calc(24px + var(--ckh,0px));display:flex;gap:10px;transform:translateY(160%);transition:transform .55s cubic-bezier(.34,1.56,.64,1);z-index:10}
 .bar.show{transform:none}
 .cta{flex:1;height:50px;border-radius:25px;border:0;background:#111;color:#fff;font:700 15px -apple-system,system-ui,sans-serif;cursor:pointer}
 .total{width:112px;height:50px;border-radius:25px;background:var(--pill);display:grid;place-items:center;font-weight:700}
@@ -75,6 +75,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
   </div>
   <div class="toast" id="toast"></div>
 </div>
+<script src="../checkout.js"></script>
 <script>
 (async function () {
 const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
@@ -216,7 +217,8 @@ function closeD(){
 $('back').onclick=closeD;
 addEventListener('resize',()=>{if(!det)layout()});
 ['gesturestart','dblclick'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
-$('cta').onclick=()=>{const n=qty[cur];$('toast').textContent=n+' × '+D[cur].n+' added to cart';
+Checkout.init();
+$('cta').onclick=()=>{const n=qty[cur];if(n>0)Checkout.add({key:'d:'+D[cur].n,n:D[cur].n,p:D[cur].p,img:D[cur].img||''},n,$('cta'));else Checkout.add({key:'d:'+D[cur].n,n:D[cur].n,p:D[cur].p,img:D[cur].img||''},1,$('cta'));$('toast').textContent=n+' × '+D[cur].n+' added to cart';
  $('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1600);qty[cur]=0;upd()};
 render();layout();
 })();

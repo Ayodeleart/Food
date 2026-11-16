@@ -23,7 +23,7 @@ body{background:#8a8f88;display:flex;align-items:center;justify-content:center;f
 .stepper{display:inline-flex;align-items:center;gap:16px;margin-top:6px;background:#fff;color:#111;border-radius:999px;padding:3px}
 .stepper button{width:32px;height:32px;border-radius:50%;border:0;background:#eef1ea;color:#111;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
 .stepper span{min-width:20px;font-size:16px;font-weight:600}
-.add{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;width:64%;height:60px;background:#000;color:#fff;border:0;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:5;transition:background .2s,transform .12s,box-shadow .12s;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.add{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(18px + var(--ckh,0px));width:64%;height:60px;background:#000;color:#fff;border:0;border-radius:999px;box-shadow:0 10px 24px rgba(0,0,0,.35);z-index:5;transition:background .2s,transform .12s,box-shadow .12s;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .add:active{transform:translateX(-50%) scale(.94);box-shadow:0 4px 10px rgba(0,0,0,.35)}
 .add.done{background:#1faa59;animation:pop .45s ease}
 .add .label{display:inline-flex;align-items:center;gap:6px}
@@ -88,6 +88,7 @@ body{background:#8a8f88;display:flex;align-items:center;justify-content:center;f
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../checkout.js"></script>
 <script>
 const ngn = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -334,7 +335,7 @@ function layout() {
   // The name follows the top drink, the controls stay centred above Add To Order.
   nameEl.style.left = (pcx - 120) + 'px';
   nameEl.style.top = (cardTop + D + 26) + 'px';
-  controls.style.bottom = (BAR_H + 8) + 'px';
+  controls.style.bottom = 'calc(' + (BAR_H + 8) + 'px + var(--ckh,0px))';
   render();
 }
 
@@ -451,6 +452,7 @@ document.getElementById('addBtn').addEventListener('click', () => {
   const fi = frontIndex();
   const q = qtys[fi];
   order.set(fi, (order.get(fi) || 0) + q);
+  Checkout.add({ key: 'b:' + PRODUCTS[fi].name, n: PRODUCTS[fi].name, p: PRODUCTS[fi].price, img: PRODUCTS[fi].image || PRODUCTS[fi].img || '' }, q, document.getElementById('addBtn'));
   qtys[fi] = 1;
   updateOrder();
   showToast(`${q} × ${PRODUCTS[fi].name} added`);
@@ -488,6 +490,8 @@ function haptic() {
 window.addEventListener('resize', layout);
 layout();
 requestAnimationFrame(tick);
+Checkout.init();
+document.querySelector('.round[aria-label="Cart"]').addEventListener('click', () => Checkout.open());
 </script>
 </body>
 </html>
