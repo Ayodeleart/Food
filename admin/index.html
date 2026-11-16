@@ -39,6 +39,7 @@ textarea{min-height:110px;resize:vertical}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .row .n{flex:1 1 140px;width:auto}
 .row .p{flex:0 0 96px;width:96px}
+.row .d{flex:1 1 100%;width:100%}
 .thm{width:52px;height:52px;flex:none;border-radius:10px;background:conic-gradient(#f3ece2 25%,#fff 0 50%,#f3ece2 0 75%,#fff 0) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;color:var(--mut)}
 .thm img{max-width:100%;max-height:100%;object-fit:contain}
 .add{display:grid;grid-template-columns:1fr 110px auto;gap:8px;margin:8px 0}
@@ -135,6 +136,17 @@ label.chk.sm input{width:18px;height:18px;margin:0}
       });
     });
   }
+  function squareTrim(blob) {
+    return loadCanvas(blob, 1400).then(function (c) {
+      var w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = -1, y1 = -1, x, y;
+      for (y = 0; y < h; y++) for (x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return blob;
+      var bw = x1 - x0 + 1, bh = y1 - y0 + 1, side = Math.round(Math.max(bw, bh) * 1.06), o = document.createElement('canvas');
+      o.width = o.height = side;
+      o.getContext('2d').drawImage(c, x0, y0, bw, bh, Math.round((side - bw) / 2), Math.round((side - bh) / 2), bw, bh);
+      return new Promise(function (res, rej) { o.toBlob(function (b) { b ? res(b) : rej(new Error('Could not process that image')); }, 'image/png'); });
+    });
+  }
   function cutout(file) {
     return loadCanvas(file, 1400, true).then(function (c) {
       return new Promise(function (res, rej) {
@@ -149,7 +161,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     });
   }
   function store(path0, file, max, cut) {
-    return (cut ? (busy('Removing background…'), cutout(file)) : Promise.resolve(file)).then(function (src) { busy('Uploading picture…'); return prep(src, max); }).then(function (p) {
+    return (cut ? (busy('Removing background…'), cutout(file).then(function (b) { return path0.indexOf('items/') === 0 ? squareTrim(b) : b; })) : Promise.resolve(file)).then(function (src) { busy('Uploading picture…'); return prep(src, max); }).then(function (p) {
       var path = path0 + '.' + p.ext;
       return fetch(URL_ + '/storage/v1/object/' + BUCKET + '/' + path, {
         method: 'POST',
@@ -238,12 +250,14 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
   function loadItems() {
     var box = document.getElementById('mlist');
-    rest('menu_items?select=id,name,price,image_url&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc').then(function (rows) {
+    rest('menu_items?select=id,name,price,image_url,description,available&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc').then(function (rows) {
       if (!box) return;
       box.className = 'card';
       box.innerHTML = rows.length ? rows.map(function (r) {
         return '<div class="row" data-id="' + r.id + '" data-img="' + esc(r.image_url || '') + '"><div class="thm">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" alt="">' : 'No pic') + '</div>' +
           '<input class="in n" value="' + esc(r.name) + '"><input class="in p" inputmode="decimal" value="' + Number(r.price).toFixed(2) + '">' +
+          '<input class="in d" placeholder="Short description, e.g. Rice, chicken, plantain" value="' + esc(r.description || '') + '">' +
+          '<label class="chk sm" style="margin:0"><input type="checkbox" class="av"' + (r.available === false ? '' : ' checked') + '> Available</label>' +
           '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
           (r.image_url ? '<button class="b ghost" data-ipicrm>Clear pic</button>' : '') + '<button class="b ghost" data-del>Delete</button></div>';
       }).join('') : '<span class="muted">No items in this category yet.</span>';
@@ -298,7 +312,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     if (b.hasAttribute('data-save') && id) {
       var n = row.querySelector('.n').value.trim(), p = parseFloat(row.querySelector('.p').value);
       if (!n || isNaN(p)) return toast('Enter a name and a price', true);
-      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { name: n, price: p } }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
+      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { name: n, price: p, description: row.querySelector('.d').value.trim() || null, available: row.querySelector('.av').checked } }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
     } else if (b.hasAttribute('data-del') && id) {
       if (confirm('Delete this item?')) rest('menu_items?id=eq.' + id, { method: 'DELETE' }).then(function () { toast('Deleted'); loadItems(); }).catch(function (x) { toast(x.message, true); });
     } else if (b.id === 'aadd') {
