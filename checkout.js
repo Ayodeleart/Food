@@ -2,7 +2,7 @@
    Every page loads this file and shares one cart (localStorage), so the cart follows you around the app.
 
    Checkout.init({ bar: true })          bar:false = no bottom bar (main app opens the sheet from its Cart tab)
-   Checkout.add({ key, n, p, img }, qty, fromEl, done)   add an item (p = price number in naira); fromEl = optional element the dot flies from
+   Checkout.add({ key, n, p, img }, qty, fromEl, done, toEl)   add an item (p = price number in naira); fromEl = optional element the dot flies from; toEl = optional element it flies to (default: the checkout bar)
    Checkout.open() / close()   Checkout.count() / total()   Checkout.onChange(fn)
    While the bar is showing, --ckh on <html> holds its height so a page can lift its own bottom controls. */
 (function () {
@@ -126,8 +126,8 @@
     if (el.id === 'ck-go') { if (typeof API.onCheckout === 'function') API.onCheckout(list(), total()); else toast('Checkout is not connected yet'); return; }
   }
 
-  function fly(from, cb) {
-    var ring = root && root.querySelector('.ck-ring');
+  function fly(from, cb, to) {
+    var ring = to || (root && root.querySelector('.ck-ring'));
     if (!from || !ring || !from.getBoundingClientRect || !document.body.animate) { cb(); return; }
     var r = from.getBoundingClientRect(), g = ring.getBoundingClientRect(), d = document.createElement('div');
     d.className = 'ck-dot'; d.style.left = (r.left + r.width / 2 - 7) + 'px'; d.style.top = (r.top + r.height / 2 - 7) + 'px'; document.body.appendChild(d);
@@ -137,7 +137,7 @@
 
   var API = {
     init: function (o) { opts = { bar: !(o && o.bar === false) }; load(); if (document.body) build(); else document.addEventListener('DOMContentLoaded', build); return API; },
-    add: function (item, qty, from, done) {
+    add: function (item, qty, from, done, to) {
       if (!built) build();
       qty = Math.max(1, qty || 1);
       function commit() {
@@ -145,7 +145,7 @@
         if (o) o.q += qty; else items[k] = { n: item.n, p: Number(item.p) || 0, img: item.img || '', q: qty };
         changed(); pop(); if (done) done();
       }
-      fly(from, commit);
+      fly(from, commit, to);
     },
     count: count, total: total, items: list,
     open: function () { if (!built) build(); if (count()) $('ck-sheet').classList.add('open'); else toast('Your cart is empty'); },
