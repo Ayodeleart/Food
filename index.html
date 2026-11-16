@@ -466,8 +466,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       var id = x.getImageData(0, 0, cw, ch), d = id.data, x0 = cw, y0 = ch, x1 = -1, y1 = -1, X, Y, i, a;
       for (Y = 0; Y < ch; Y++) for (X = 0; X < cw; X++) {
         i = (Y * cw + X) * 4; a = d[i + 3];
-        /* wipe the faint haze / white fringe a cut-out leaves around the food */
-        if (a < 60 || (a < 170 && d[i] > 215 && d[i + 1] > 215 && d[i + 2] > 215)) { d[i + 3] = 0; continue; }
+        /* wipe baked shadows, haze and white fringe so only the solid plate sets the crop */
+        if (a < 200 || (a < 250 && d[i] > 215 && d[i + 1] > 215 && d[i + 2] > 215)) { d[i + 3] = 0; continue; }
         if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
       }
       if (x1 < 0) return;
