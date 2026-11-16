@@ -46,6 +46,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .pname{display:block;margin:12px 6px 0;font-size:20px;font-weight:700;line-height:1.1;color:#27336B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pdesc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:6px 6px 0;font-size:14px;line-height:1.3;color:#5A6385;min-height:2.6em}
 .parrow{align-self:flex-end;margin:4px 8px 0;color:#B8453A;line-height:0}
+.pcard.nod .pname{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pcard.nod .pdesc{display:none}
+.pcard.nod .parrow{margin-top:auto;padding-top:2px}
 .pgs{background:#F4F2F0;padding-bottom:150px}
 .pg{position:absolute;left:0;top:0;right:0;bottom:0}
 .pg-top{position:relative;z-index:1;height:clamp(380px,50vh,480px);background:#9B1C17;border-radius:0 0 50% 50% / 0 0 35% 35%}
@@ -459,9 +462,15 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       var w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, 480 / Math.max(w, h)), cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
       var c = document.createElement('canvas'); c.width = cw; c.height = ch;
       var x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, cw, ch);
-      var d = x.getImageData(0, 0, cw, ch).data, x0 = cw, y0 = ch, x1 = -1, y1 = -1, X, Y, a;
-      for (Y = 0; Y < ch; Y++) for (X = 0; X < cw; X++) { a = d[(Y * cw + X) * 4 + 3]; if (a > 24) { if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; } }
+      var id = x.getImageData(0, 0, cw, ch), d = id.data, x0 = cw, y0 = ch, x1 = -1, y1 = -1, X, Y, i, a;
+      for (Y = 0; Y < ch; Y++) for (X = 0; X < cw; X++) {
+        i = (Y * cw + X) * 4; a = d[i + 3];
+        /* wipe the faint haze / white fringe a cut-out leaves around the food */
+        if (a < 60 || (a < 170 && d[i] > 215 && d[i + 1] > 215 && d[i + 2] > 215)) { d[i + 3] = 0; continue; }
+        if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+      }
       if (x1 < 0) return;
+      x.putImageData(id, 0, 0);
       var bw = x1 - x0 + 1, bh = y1 - y0 + 1, S = Math.max(bw, bh), o = document.createElement('canvas'); o.width = o.height = S;
       o.getContext('2d').drawImage(c, x0, y0, bw, bh, (S - bw) / 2, (S - bh) / 2, bw, bh);
       o.toBlob(function (b) { if (b) img.src = URL.createObjectURL(b); });
@@ -473,7 +482,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     if (!c.items.length) return '<p class="empty" style="grid-column:1/-1">No items yet.</p>';
     return c.items.map(function (it, i) {
       var price = it.pn != null ? ngnc(it.pn) : it.p, ok = it.avail !== false;
-      return '<button class="pcard" data-item="' + cat + i + '" aria-label="' + esc(it.n) + '"><span class="ppanel">' +
+      return '<button class="pcard' + (it.desc ? '' : ' nod') + '" data-item="' + cat + i + '" aria-label="' + esc(it.n) + '"><span class="ppanel">' +
         '<span class="pav' + (ok ? '' : ' off') + '">' + (ok ? 'Available' : 'Sold out') + '</span><span class="ppr">' + esc(price) + '</span>' +
         '<span class="pimg">' + (it.img ? '<img crossorigin="anonymous" src="' + esc(it.img) + '" alt="" onload="window.__trim(this)" onerror="window.__noCors(this)">' : '<i>' + esc((it.n || '?').charAt(0).toUpperCase()) + '</i>') + '</span></span>' +
         '<span class="pname">' + esc(it.n) + '</span><span class="pdesc">' + esc(it.desc || '') + '</span><span class="parrow">' + ICON.arrow + '</span></button>';
