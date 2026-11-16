@@ -33,6 +33,22 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
 .btn{flex:1;padding:13px;border-radius:12px;border:0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer}
 .btn.ghost{background:#eef1ea;color:#333}
 .btn.solid{background:#8ea35e;color:#fff}
+.arc,.pill,.focus,header h1{transition:opacity .35s}
+.app.det .pill,.app.det .focus,.app.det header h1{opacity:0;pointer-events:none}
+.app.det .cart{opacity:0;pointer-events:none}
+.back,.dtitle,.chip{opacity:0;pointer-events:none}
+.back{position:absolute;left:8px;top:calc(env(safe-area-inset-top,0px) + 16px);width:44px;height:44px;border:0;background:none;font-size:26px;cursor:pointer;color:#111;z-index:25;transform:translateX(-12px);transition:opacity .25s,transform .3s}
+.dtitle{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 26px);text-align:center;font-size:18px;font-weight:600;z-index:25;transform:translateY(-10px);transition:opacity .25s,transform .3s}
+.chips{position:absolute;left:16px;top:30%;display:flex;flex-direction:column;gap:12px;z-index:12}
+.chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:20px;padding:7px 8px 7px 14px;font-size:14px;align-self:flex-start;transform:translateX(-36px);transition:opacity .25s,transform .3s}
+.chip b{font-size:12px;font-weight:700;padding:4px 9px;border-radius:12px;background:#cfdcae;color:#111}
+.app.det .back{opacity:1;transform:none;pointer-events:auto;transition:opacity .4s .45s,transform .5s .45s}
+.app.det .dtitle{opacity:1;transform:none;transition:opacity .4s .4s,transform .5s .4s}
+.app.det .chip{opacity:1;transform:none;transition:opacity .4s calc(.4s + var(--i)*.08s),transform .55s cubic-bezier(.34,1.4,.64,1) calc(.4s + var(--i)*.08s)}
+.bar{position:absolute;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;gap:10px;z-index:26;transform:translateY(160%);transition:transform .35s}
+.app.det .bar{transform:none;transition:transform .6s cubic-bezier(.34,1.56,.64,1) .5s}
+.cta{flex:1;height:50px;border-radius:25px;border:0;background:#8ea35e;color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.total{min-width:112px;padding:0 14px;height:50px;border-radius:25px;background:#fff;display:grid;place-items:center;font-weight:700;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -42,6 +58,13 @@ header h1{font-size:24px;font-weight:700;letter-spacing:-.2px}
     <div class="arc" id="arc"></div>
     <button class="pill" id="pill"></button>
     <div class="focus" id="focus"></div>
+  </div>
+  <button class="back" id="back" aria-label="Back">&larr;</button>
+  <p class="dtitle" id="dtitle"></p>
+  <div class="chips" id="chips"></div>
+  <div class="bar">
+    <button class="cta" id="addBtn">Add to Cart</button>
+    <div class="total" id="total"></div>
   </div>
   <button class="cart" id="cartBtn" hidden></button>
   <div class="toast" id="toast"></div>
@@ -64,7 +87,7 @@ async function sbItems() {
   const cat = new URLSearchParams(location.search).get('cat'); if (!cat) return [];
   try {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
-    const r = await fetch(SB + '/rest/v1/menu_items?select=name,price,image_url&category_id=eq.' + encodeURIComponent(cat) + '&order=created_at.asc', { headers: { apikey: SBK, Authorization: 'Bearer ' + SBK }, signal: ctl.signal });
+    const r = await fetch(SB + '/rest/v1/menu_items?select=name,price,image_url,description&category_id=eq.' + encodeURIComponent(cat) + '&order=created_at.asc', { headers: { apikey: SBK, Authorization: 'Bearer ' + SBK }, signal: ctl.signal });
     clearTimeout(t); return r.ok ? await r.json() : [];
   } catch (e) { return []; }
 }
@@ -97,7 +120,7 @@ const CONFIG = {
 };
 /* ========================================================== */
 
-{ const rows = await sbItems(); if (rows.length) CONFIG.items = rows.map(r => ({ name: r.name, price: Number(r.price), image: r.image_url || '' })); }
+{ const rows = await sbItems(); if (rows.length) CONFIG.items = rows.map(r => ({ name: r.name, price: Number(r.price), image: r.image_url || '', desc: r.description || '' })); }
 document.getElementById('title').textContent = CONFIG.title;
 const pill = document.getElementById('pill');
 pill.textContent = CONFIG.pillText;
@@ -118,6 +141,8 @@ let cx = 0, cy = 0, R = 0, D = 0;
 let rot = 0, vel = 0, dragging = false;
 let sx = 0, sy = 0, lastA = 0, moved = 0, startI = null;
 let lastFront = -1, toastTimer = null;
+let det = -1, goal = null;
+let ro = 0, rov = 0, dv = 0, dvv = 0, sel = -1; // table roll-away and plate roll-out (springs)
 const cart = new Map();
 const els = [];
 
@@ -163,13 +188,27 @@ function frontIndex() {
 }
 
 function render() {
+  // The table (black circle) rolls off to the left carrying its plates; ro goes 0 -> 1.
+  const rad = R * 1.03, L = R + D * 0.8 + 12, ang = L / rad * 180 / Math.PI;
+  const cxe = cx - ro * L, rr = rot - ro * ang;
+  arc.style.transform = `translateX(${(-ro * L).toFixed(2)}px) rotate(${(-ro * ang).toFixed(2)}deg)`;
   els.forEach((el, i) => {
-    const t = (i * STEP + rot) * Math.PI / 180;
-    const x = cx + R * Math.cos(t) - D / 2;
-    const y = cy + R * Math.sin(t) - D / 2;
+    const t = (i * STEP + rr) * Math.PI / 180;
+    let x = cxe + R * Math.cos(t) - D / 2;
+    let y = cy + R * Math.sin(t) - D / 2;
     const k = Math.max(0, Math.cos(t));
-    const s = CONFIG.enlargeCenter ? 1 + 0.5 * Math.pow(k, 4) : 1;
-    el.style.transform = `translate3d(${x}px,${y}px,0) scale(${s.toFixed(3)})`;
+    let s = CONFIG.enlargeCenter ? 1 + 0.5 * Math.pow(k, 4) : 1;
+    let a = -ro * ang;
+    if (i === sel) {
+      // the chosen plate rolls out to the right edge, bigger, and lands tilted (dv goes 0 -> 1)
+      const W = stage.clientWidth, H = stage.clientHeight;
+      x += (W * 0.96 - D / 2 - x) * dv;
+      y += (H * 0.17 + W * 0.46 - D / 2 - y) * dv;
+      s += (W * 0.92 / D - s) * dv;
+      a = a * (1 - dv) + 352 * dv;
+      el.style.zIndex = 6;
+    } else el.style.zIndex = '';
+    el.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) scale(${s.toFixed(3)}) rotate(${a.toFixed(2)}deg)`;
     if (CONFIG.rollImages && el.firstChild) {
       el.firstChild.style.transform = `rotate(${(-rot).toFixed(1)}deg)`;
     }
@@ -187,6 +226,8 @@ function angleOf(e) {
 }
 
 stage.addEventListener('pointerdown', e => {
+  if (det >= 0) return;
+  goal = null;
   dragging = true;
   vel = 0;
   moved = 0;
@@ -213,14 +254,26 @@ window.addEventListener('pointerup', e => {
   if (!dragging) return;
   dragging = false;
   if (moved < 8) {
-    if (startI !== null) addToCart(startI);
-    else if (e.target.closest && e.target.closest('#pill')) addToCart(frontIndex());
+    if (startI !== null) {
+      if (startI === frontIndex()) openD(startI);
+      else { vel = 0; goal = -startI * STEP + Math.round((rot + startI * STEP) / 360) * 360; }
+    } else if (e.target.closest && e.target.closest('#pill')) openD(frontIndex());
   }
 });
 
+function spring(x, v, tg, k, c, dt) { v += (-k * (x - tg) - c * v) * dt; return [x + v * dt, v]; }
 function tick() {
+  const now = performance.now(), dt = Math.min(0.033, (now - (tick.last || now)) / 1000);
+  tick.last = now;
+  const tg = det >= 0 ? 1 : 0;
+  [ro, rov] = spring(ro, rov, tg, 70, 10, dt);
+  [dv, dvv] = spring(dv, dvv, tg, 55, 8.5, dt);
+  if (tg === 0 && sel >= 0 && Math.abs(dv) < 0.002 && Math.abs(dvv) < 0.02 && Math.abs(ro) < 0.002) { sel = -1; dv = dvv = ro = rov = 0; }
   if (!dragging) {
-    if (Math.abs(vel) > 0.12) {
+    if (goal !== null) {
+      rot += (goal - rot) * 0.14;
+      if (Math.abs(goal - rot) < 0.05) { rot = goal; goal = null; }
+    } else if (Math.abs(vel) > 0.12) {
       rot += vel;
       vel *= 0.93;
     } else {
@@ -282,6 +335,46 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
 }
 
+const appEl = document.getElementById('app');
+
+/* What is on the plate: read from the item's description, e.g. "Rice 1500, Chicken 2500, Plantain 800".
+   A price after a name is optional; without one the name is shown on its own.
+   No description: the item itself is shown with its price. */
+function partsOf(it) {
+  const out = [];
+  String(it.desc || '').split(/[,;\n+]/).forEach(p => {
+    p = p.trim(); if (!p) return;
+    const m = p.match(/^(.*?)(?:[\s:=\-\u2013]+(?:NGN|N)|[\s:=\-\u2013]*\u20A6|[\s:=\-\u2013]*)\s*(\d[\d,]*(?:\.\d+)?)\s*$/i);
+    out.push(m && m[1].trim() ? [m[1].trim(), Number(m[2].replace(/,/g, ''))] : [p, null]);
+  });
+  return out.length ? out : [[it.name, it.price]];
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* Tap the middle plate: the table rolls away to the left with its other plates, the plate rolls
+   out to the right edge (bigger, tilted), its items slide in on the left, and Add to Cart rises
+   at the bottom. Back rolls everything home again. */
+function openD(i) {
+  if (det >= 0) return;
+  det = i; sel = i; vel = 0; goal = null;
+  const it = ITEMS[i];
+  document.getElementById('dtitle').textContent = it.name;
+  document.getElementById('chips').innerHTML = partsOf(it).map((x, k) =>
+    `<div class="chip" style="--i:${k}"><span>${esc(x[0])}</span>${x[1] == null ? '' : `<b>${ngn(x[1])}</b>`}</div>`).join('');
+  document.getElementById('total').textContent = ngn(it.price);
+  appEl.classList.add('det');
+}
+function closeD() {
+  if (det < 0) return;
+  det = -1;
+  appEl.classList.remove('det');
+}
+document.getElementById('back').addEventListener('click', closeD);
+document.getElementById('addBtn').addEventListener('click', () => {
+  if (det < 0) return;
+  addToCart(det);
+  setTimeout(closeD, 650);
+});
 pill.addEventListener('click', e => e.stopPropagation());
 cartBtn.addEventListener('click', () => { sheet.hidden = !sheet.hidden; });
 document.getElementById('closeBtn').addEventListener('click', () => { sheet.hidden = true; });
