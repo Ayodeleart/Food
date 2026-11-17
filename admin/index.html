@@ -267,6 +267,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
       '<div class="card"><b>Add an item</b><p class="muted" style="margin:4px 0 0">Pick the picture and fill in the details in any order, then tap Add item once.</p>' +
       '<div class="nf"><button type="button" class="pickb" id="apick">+ Picture</button><div class="nfields"><input class="in" id="an" placeholder="Item name"><input class="in" id="ap" inputmode="decimal" placeholder="Price"></div></div>' +
       '<input class="in" id="ad" placeholder="Short description, e.g. Rice, chicken, plantain">' +
+      '<textarea class="in" id="ax" rows="3" placeholder="Details shown on the product page, e.g. ingredients, size, what is inside" style="margin-top:8px"></textarea>' +
       '<div class="btns" style="margin-top:10px"><button class="b" id="aadd">Add item</button><button class="b ghost" id="aclear" hidden>Remove picture</button></div></div>' +
       '<div class="card"><b>Paste many</b><p class="muted" style="margin:6px 0">One per line, like <i>Jollof Rice | 12.99</i></p><textarea id="bulk" placeholder="Jollof Rice | 12.99&#10;Fried Rice | 13.50"></textarea><div style="margin-top:8px"><button class="b" id="abulk">Add all</button></div></div>';
     showAddPic();
@@ -281,16 +282,16 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   function resetAdd() {
     if (addPrev) URL.revokeObjectURL(addPrev);
     addFile = null; addPrev = ''; showAddPic();
-    ['an', 'ap', 'ad'].forEach(function (i) { var e = document.getElementById(i); if (e) e.value = ''; });
+    ['an', 'ap', 'ad', 'ax'].forEach(function (i) { var e = document.getElementById(i); if (e) e.value = ''; });
   }
   function addItem() {
-    var name = document.getElementById('an').value.trim(), price = parseFloat(document.getElementById('ap').value), desc = document.getElementById('ad').value.trim(), file = addFile, made = false, btn = document.getElementById('aadd');
+    var name = document.getElementById('an').value.trim(), price = parseFloat(document.getElementById('ap').value), desc = document.getElementById('ad').value.trim(), det = document.getElementById('ax').value.trim(), file = addFile, made = false, btn = document.getElementById('aadd');
     if (!name || isNaN(price)) return toast('Enter a name and a price', true);
     var cut = wantCut('items'); btn.disabled = true;
     busy(file ? 'Preparing picture…' : 'Saving item…');
     (file ? prepared(file, 1200, cut, cut) : Promise.resolve(null)).then(function (p) {
       busy('Saving item…');
-      return rest('menu_items', { method: 'POST', headers: { Prefer: 'return=representation' }, body: [{ category_id: menuCat, category_name: catLabel(), name: name, price: price, description: desc || null, available: true }] }).then(function (rows) { made = true; return { p: p, id: rows[0].id }; });
+      return rest('menu_items', { method: 'POST', headers: { Prefer: 'return=representation' }, body: [{ category_id: menuCat, category_name: catLabel(), name: name, price: price, description: desc || null, details: det || null, available: true }] }).then(function (rows) { made = true; return { p: p, id: rows[0].id }; });
     }).then(function (o) {
       if (!o.p) return;
       busy('Uploading picture…');
