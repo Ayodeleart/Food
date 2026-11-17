@@ -88,6 +88,11 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .pg-tab{height:50px;min-width:128px;padding:0 22px;border-radius:25px;background:#fff;color:#1B1B1B;font-size:16px;font-weight:600}
 .pg-tab.on{background:#9B1C17;color:#fff}
 .pg-desc{margin:22px 0 0;font-size:17px;line-height:1.55;color:#1B1B1B}
+.pg-extra{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;margin-top:24px;border-radius:26px;border:2px solid #9B1C17;background:transparent;color:#9B1C17;font-size:17px;font-weight:600}
+.pg-extra span{font-size:22px;line-height:1}
+.pg-extra:active{background:rgba(155,28,23,.08)}
+.xtra{position:absolute;left:0;top:0;right:0;bottom:0;z-index:70;background:#f9d98c}
+.xtra iframe{position:absolute;left:0;top:0;width:100%;height:100%;border:0;background:transparent}
 .pg-more{color:#9B1C17;font-weight:700;font-size:inherit}
 .pg-rev{margin-top:18px;color:#5b5551;font-size:16px}
 .pg-rev .rv{padding:12px 0;border-bottom:1px solid #E6E2DE;color:#1B1B1B}
@@ -553,7 +558,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       '<div class="pg-body"><div class="pg-row"><h1>' + esc(it.n) + '</h1><span class="pg-price">' + esc(price) + '</span></div>' +
       '<div class="pg-cat">' + esc(CATS[f.cat].label) + '</div>' +
       '<div class="pg-tabs"><button class="pg-tab' + (state.ptab === 'details' ? ' on' : '') + '" data-ptab="details">Details</button><button class="pg-tab' + (state.ptab === 'reviews' ? ' on' : '') + '" data-ptab="reviews">Reviews</button></div>' +
-      body + '</div></div>' +
+      body + (CATS[f.cat].group === 'Food' ? '<button class="pg-extra" data-extras="1"><span aria-hidden="true">+</span> Add extras</button>' : '') + '</div></div>' +
       '<div class="pg-bar"><div class="pg-qty"><button data-qm="1" aria-label="Less">' + PI.minus + '</button><span id="pq">' + state.qty + '</span><button data-qp="1" aria-label="More">' + PI.plus + '</button></div>' +
       '<button class="pg-add" data-padd="1"' + (ok ? '' : ' disabled') + '>' + (ok ? 'Add to Cart' : 'Sold out') + '</button></div></div>';
   }
@@ -647,7 +652,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   var PAGES = {
     'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html',
     'burgers-sandwiches-shawarma': 'pages/dunuts.html',
-    'small-chops-snacks': 'pages/small-chops.html'
+    'small-chops-snacks': 'pages/small-chops.html',
+    'chicken-turkey': 'pages/product-carousel.html'
   };
   ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -656,7 +662,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function circleAt(r) { return 'circle(' + r + 'px at ' + origin.x + 'px ' + origin.y + 'px)'; }
   function openCat(k, ev) {
     if (!PAGES[k]) { state.screen = 'menu'; state.cat = k; render(); return; }
-    openPage(PAGES[k] + '?cat=' + k + '&t=' + encodeURIComponent(CATS[k].label), CATS[k].bg, ev, CATS[k].label);
+    openPage(PAGES[k] + '?cat=' + k + '&t=' + encodeURIComponent(CATS[k].label), CATS[k].bg, ev, CATS[k].label, /product-carousel/.test(PAGES[k]) ? function () { return true; } : undefined);
   }
   function satPx() {   // status-bar / notch height, measured here because iframes can't always see env()
     var p = document.createElement('div');
@@ -707,6 +713,30 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     pg.animate([{ clipPath: circleAt(far) }, { clipPath: circleAt(0) }], { duration: 440, delay: 120, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' })
       .finished.then(done).catch(done);
   }
+  /* "Add extras": slides the carousel page over the product page, no navigation */
+  function openExtras() {
+    if (document.getElementById('xtra')) return;
+    var d = document.createElement('div'); d.id = 'xtra'; d.className = 'xtra';
+    d.innerHTML = '<iframe src="pages/product-carousel.html?extras=1" title="Add extras"></iframe>';
+    app.appendChild(d);
+    var xfr = d.querySelector('iframe');
+    xfr.addEventListener('load', function () { try { xfr.contentDocument.documentElement.style.setProperty('--sat', satPx() + 'px'); } catch (_) {} });
+    if (!REDUCED) d.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 480, easing: 'cubic-bezier(.22,.9,.2,1)' });
+  }
+  function closeExtras() {
+    var d = document.getElementById('xtra'); if (!d || d.closing) return;
+    d.closing = true; d.style.background = 'transparent';
+    setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); updBadge(); }, REDUCED ? 0 : 480);
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data; if (!d || typeof d !== 'object' || e.origin !== location.origin) return;
+    var xf = document.querySelector('#xtra iframe');
+    if (d.type === 'close-page') { if (xf && e.source === xf.contentWindow) closeExtras(); else closeCat(); }
+    else if (d.type === 'cart-changed') {
+      var n = Number(d.count) || 0, bs = app.querySelectorAll('.gbadge, .pbadge');
+      for (var i = 0; i < bs.length; i++) { bs[i].textContent = n; bs[i].hidden = !n; }
+    }
+  });
   function closeDrawer() { var d = document.getElementById('drawer'); if (d) d.parentNode.removeChild(d); }
 
   app.addEventListener('pointerdown', function (e) {
@@ -758,6 +788,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
         var o = t.getAttribute('data-open'), f = t.getAttribute('data-fav'), a = t.getAttribute('data-add'), g = t.getAttribute('data-go'), ci = t.getAttribute('data-ci');
         if (t.getAttribute('data-pb')) { var pbx = document.getElementById('pb'), op = pbx.classList.toggle('open'); t.setAttribute('aria-expanded', String(op)); return; }
         if (t.getAttribute('data-plate')) { openPlate(t.getAttribute('data-plate'), e); return; }
+        if (t.getAttribute('data-extras')) { openExtras(); return; }
         if (t.getAttribute('data-item')) { openItem(t.getAttribute('data-item')); return; }
         if (t.getAttribute('data-back')) { state.screen = state.back || 'main'; render(); return; }
         if (t.getAttribute('data-ptab')) { state.ptab = t.getAttribute('data-ptab'); render(); return; }

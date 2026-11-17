@@ -85,6 +85,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     ['soft-drinks-sodas', 'Soft Drinks & Sodas', 'Drinks'], ['fresh-juices', 'Fresh Juices', 'Drinks'],
     ['smoothies-milkshakes', 'Smoothies & Milkshakes', 'Drinks'], ['water', 'Water', 'Drinks']
   ];
+  var MENU_CATS = CATS.concat([['extras', 'Extras (shown under “Add extras”)', 'Extras']]);
   var view = document.getElementById('view'), fileEl = document.getElementById('file'), toastEl = document.getElementById('toast');
   var imgs = {}, tab = 'pics', menuCat = CATS[0][0], pending = null, tt = 0;
 
@@ -242,7 +243,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   /* ---- Menu items ---- */
   function usd(n) { return '\u20A6' + (Number(n) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function menu() {
-    var opts = CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === menuCat ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('');
+    var opts = MENU_CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === menuCat ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('');
     view.innerHTML = '<h2>Menu items</h2><select id="mcat">' + opts + '</select><label class="chk sm"><input type="checkbox" data-cut="items"' + (wantCut('items') ? ' checked' : '') + '> Remove background from item pictures (untick for 3D)</label><div id="mlist" class="card muted">Loading…</div>' +
       '<div class="card"><b>Add one</b><div class="add"><input class="in" id="an" placeholder="Item name"><input class="in" id="ap" inputmode="decimal" placeholder="Price"><button class="b" id="aadd">Add</button></div></div>' +
       '<div class="card"><b>Paste many</b><p class="muted" style="margin:6px 0">One per line, like <i>Jollof Rice | 12.99</i></p><textarea id="bulk" placeholder="Jollof Rice | 12.99&#10;Fried Rice | 13.50"></textarea><div style="margin-top:8px"><button class="b" id="abulk">Add all</button></div></div>';
@@ -264,7 +265,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
       }).join('') : '<span class="muted">No items in this category yet.</span>';
     }).catch(function (e) { if (box) { box.className = 'card muted'; box.textContent = 'Could not load: ' + e.message; } });
   }
-  function catLabel() { for (var i = 0; i < CATS.length; i++) if (CATS[i][0] === menuCat) return CATS[i][1]; return menuCat; }
+  function catLabel() { for (var i = 0; i < MENU_CATS.length; i++) if (MENU_CATS[i][0] === menuCat) return MENU_CATS[i][1]; return menuCat; }
   function addRows(list) {
     var rows = list.map(function (x) { return { category_id: menuCat, category_name: catLabel(), name: x.n, price: x.p }; });
     if (!rows.length) { toast('Nothing to add', true); return Promise.resolve(); }
