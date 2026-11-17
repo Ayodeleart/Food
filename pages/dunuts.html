@@ -11,7 +11,7 @@
 html,body{height:100%;margin:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;color:var(--ink);overflow:hidden;background-color:var(--c);background-image:linear-gradient(180deg,rgba(255,255,255,.14),rgba(0,0,0,.03));transition:background-color .5s}
 #app{position:relative;height:100%;max-width:430px;margin:0 auto;overflow:hidden}
-.brand{position:absolute;left:0;right:0;top:11%;text-align:center;font-family:'Yellowtail','Brush Script MT',cursive;font-size:clamp(30px,9vw,40px);color:#3a2c36;line-height:1;transition:opacity .3s}
+.brand{position:absolute;left:0;right:0;top:11%;text-align:center;font-family:'Yellowtail','Brush Script MT',cursive;font-size:clamp(22px,6.4vw,30px);padding:0 56px;color:#3a2c36;line-height:1.1;transition:opacity .3s}
 #app.det .brand{opacity:0}
 .stage{position:absolute;inset:0;touch-action:pan-y;z-index:1}
 .item{position:absolute;left:50%;top:41.5%;width:60%;will-change:transform;pointer-events:none;transition:opacity .35s}
@@ -39,8 +39,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .total{width:112px;height:50px;border-radius:25px;background:var(--pill);display:grid;place-items:center;font-weight:700}
 .detail{position:absolute;inset:0;z-index:8;pointer-events:none}
 .back,.dtitle,.chip,.dqty{opacity:0;transition:opacity .25s,transform .3s}
-.back{position:absolute;left:14px;top:18px;border:0;background:none;font-size:26px;color:var(--ink);padding:6px 10px;cursor:pointer;transform:translateX(-12px)}
-.dtitle{position:absolute;left:0;right:0;top:26px;text-align:center;color:var(--muted);margin:0;font-size:16px;transform:translateY(-10px)}
+.back{position:absolute;left:14px;top:calc(max(var(--sat,0px),env(safe-area-inset-top,0px)) + 8px);border:0;background:none;font-size:26px;color:var(--ink);padding:6px 10px;cursor:pointer;transform:translateX(-12px)}
+.dtitle{position:absolute;left:0;right:0;top:calc(max(var(--sat,0px),env(safe-area-inset-top,0px)) + 16px);text-align:center;color:var(--muted);margin:0;font-size:16px;transform:translateY(-10px)}
 .chips{position:absolute;left:16px;top:30%;display:flex;flex-direction:column;gap:12px}
 .chip{display:flex;align-items:center;gap:10px;background:var(--pill);backdrop-filter:blur(6px);border-radius:20px;padding:7px 8px 7px 14px;font-size:13px;align-self:flex-start;transform:translateX(-36px)}
 .chip small{color:var(--muted)}
@@ -58,7 +58,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 </head>
 <body>
 <div id="app">
-  <div class="brand">Dunuts</div>
+  <div class="brand" id="brand"></div>
   <div class="stage" id="stage"></div>
   <div class="qty" id="qty"></div>
   <p class="name" id="name"></p>
@@ -100,6 +100,9 @@ const D=[
 ];
 { const rows = await sbItems(); if (rows.length) { D.length = 0; rows.forEach(r => D.push(r.image_url ? { n: r.name, p: Number(r.price), img: r.image_url, nut: [] } : { n: r.name, p: Number(r.price), base: '#d9a064', ice: '#ee3f8f', dr: null, spr: ['#fff', '#ffd45e'], bg: '#e1c5cf', acc: '#f6b6d0', nut: [] })); } }
 const $=id=>document.getElementById(id),app=$('app'),N=D.length;
+const PT=new URLSearchParams(location.search).get('t')||'';$('brand').textContent=PT;if(PT)document.title=PT;
+const PB=['#e1c5cf','#dcd7b8','#c8d7dc','#dacfc8','#d9cacd'],PA=['#f6b6d0','#f6e27a','#aee4f3','#f1d9bd','#e6c9f2'];
+const fb=d=>{if(!d.bg){const i=D.indexOf(d)%5;d.bg=PB[i];d.acc=PA[i]}};
 const qty=D.map(()=>0);let cur=0,det=false;
 function rnd(s){return()=>(s=(s*16807)%2147483647)/2147483647}
 function donut(d,seed){
@@ -122,7 +125,7 @@ function mkQ(el){
  el.innerHTML='<div class="q"><button class="mi" aria-label="Remove one">−</button><span class="n"></span><button class="pl" aria-label="Add one">+</button></div>';
  const q=el.firstChild;
  q.querySelector('.mi').onclick=e=>{e.stopPropagation();qty[cur]=Math.max(0,qty[cur]-1);upd()};
- q.querySelector('.pl').onclick=e=>{e.stopPropagation();qty[cur]=Math.min(99,qty[cur]+1);upd()}}
+ q.querySelector('.pl').onclick=e=>{e.stopPropagation();const d=D[cur];Checkout.add({key:'d:'+d.n,n:d.n,p:d.p,img:d.img||''},1,e.currentTarget);const t=$('toast');t.textContent=d.n+' added to cart';t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1400)}}
 mkQ($('qty'));mkQ($('dqty'));
 function upd(){
  const n=qty[cur],d=D[cur];
@@ -139,7 +142,7 @@ function hsl(r,g,b){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,
  if(e){s=e/(1-Math.abs(2*l-1));h=M===r?((g-b)/e)%6:M===g?(b-r)/e+2:(r-g)/e+4;h=(h*60+360)%360}return[h,s*100]}
 function prep(d,el){
  const img=el.firstChild,src=new Image();img.onload=()=>img.classList.add('ready');
- src.onerror=()=>{el.innerHTML=donut(d,D.indexOf(d)+1)};
+ 
  src.onload=()=>{
   try{
    const w=src.naturalWidth,h=src.naturalHeight,sc=Math.min(1,500/Math.max(w,h)),aw=Math.max(1,Math.round(w*sc)),ah=Math.max(1,Math.round(h*sc));
@@ -156,9 +159,9 @@ function prep(d,el){
     if(!d.bg)d.bg=`hsl(${Math.round(hh)} ${Math.round(Math.min(32,Math.max(10,ss*.35)))}% 82%)`;
     if(!d.acc)d.acc=`hsl(${Math.round(hh)} ${Math.round(Math.min(70,Math.max(35,ss*.8)))}% 80%)`}
    o.toBlob(b=>{img.src=b?URL.createObjectURL(b):d.img});
-  }catch(e){img.src=d.img}
+  }catch(e){fb(d);img.src=d.img}
   if(D[cur]===d)render()};
- src.crossOrigin='anonymous';src.onerror=()=>{img.src=d.img};src.src=d.img}
+ src.crossOrigin='anonymous';src.onerror=()=>{fb(d);img.src=d.img;if(D[cur]===d)render()};src.src=d.img}
 const stage=$('stage'),items=D.map((d,i)=>{const el=document.createElement('div');el.className='item';el.innerHTML=d.img?'<img alt="" draggable="false">':donut(d,i+1);stage.appendChild(el);if(d.img)prep(d,el);return el});
 let pos=0,vel=0,target=0,raf=0,last=0,drag=null;
 const sp=()=>app.clientWidth*.49;
