@@ -164,12 +164,12 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .scroll.menu{bottom:0}
 .scroll.menu .grid{padding-bottom:130px}
 .avatar{border-radius:22px;background:rgba(20,12,8,.32)}
-.glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.02) 45%,rgba(255,255,255,.12)),rgba(38,24,16,.42);-webkit-backdrop-filter:blur(16px) saturate(200%);backdrop-filter:blur(16px) saturate(200%);border:1px solid rgba(255,255,255,.38);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.7),inset -1.5px -1.5px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.12),0 12px 32px rgba(25,12,5,.32),0 2px 8px rgba(25,12,5,.2)}
+.glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.02) 45%,rgba(255,255,255,.12)),#C34725;-webkit-backdrop-filter:blur(16px) saturate(200%);backdrop-filter:blur(16px) saturate(200%);border:1px solid rgba(255,255,255,.38);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.7),inset -1.5px -1.5px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.12),0 12px 32px rgba(110,28,10,.38),0 2px 8px rgba(110,28,10,.25)}
 .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(130% 100% at 18% -10%,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),radial-gradient(90% 80% at 90% 120%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%)}
 .gglide{position:absolute;top:-6px;left:0;width:0;height:calc(100% + 12px);border-radius:999px;overflow:hidden;pointer-events:none;z-index:3;will-change:left,width,transform;background:transparent;box-shadow:0 10px 22px -8px rgba(0,0,0,.45)}
 .gclone{position:absolute;top:6px;left:0;display:flex;padding:6px;box-sizing:border-box;transform:scale(1.15)}
 .gclone .gb{transition:none;pointer-events:none}
-.gglide::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 1px 2px 2px -1px rgba(255,255,255,.75),inset -1px -2px 2px -1px rgba(255,255,255,.35),inset 5px 0 6px -4px rgba(255,70,200,.5),inset -5px 0 6px -4px rgba(70,225,255,.6),inset 0 5px 7px -5px rgba(255,235,120,.4),inset 0 -5px 7px -5px rgba(130,205,255,.45)}
+.gglide::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 1px 2px 2px -1px rgba(255,255,255,.75),inset -1px -2px 2px -1px rgba(255,255,255,.35),inset 0 4px 6px -4px rgba(255,255,255,.45),inset 0 -4px 6px -4px rgba(255,255,255,.3)}
 .gnav .gb{z-index:1}
 .pb{position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) * .3 + 4px + 66px + 16px);z-index:6;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
 .pbbtn{pointer-events:auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 26%,#fff,rgba(255,255,255,.78) 55%,rgba(255,240,214,.7));-webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);border:1px solid rgba(255,255,255,.85);box-shadow:inset 2px 2px 3px rgba(255,255,255,.95),inset -3px -4px 8px rgba(195,71,37,.18),0 12px 26px rgba(30,16,8,.32),0 2px 6px rgba(30,16,8,.2);animation:pbfloat 3.6s ease-in-out infinite;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
@@ -187,7 +187,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .gb:active{transform:scale(.9)}
 .sbtn.on{background:rgba(255,255,255,.26);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.75)}
 .gb svg,.sbtn svg{position:relative}
-.gbadge{position:absolute;top:6px;right:calc(50% - 26px);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#C34725;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.gbadge{position:absolute;top:6px;right:calc(50% - 26px);min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#FFF3DB;color:#C34725;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .sbtn{width:66px;height:66px;border-radius:33px;flex:none;display:flex;align-items:center;justify-content:center;color:#FFF3DB}
 .phead{height:150px;background:#C34725;color:#FFF3DB;font-size:44px;font-weight:700;display:flex;align-items:flex-end;padding:0 40px 18px;box-sizing:border-box}
 .plist{padding:12px 16px 130px}
@@ -232,7 +232,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .mpill .info{flex:1;border-radius:26px;background:rgba(28,42,37,.45);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:15px;font-weight:600;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .mpill button{width:62px;border-radius:26px;background:rgba(28,42,37,.55);color:#fff;font-size:28px;font-weight:600}
 .mcats{background:#EDE6D8;margin-top:10px;padding-bottom:140px;min-height:calc(100% - 110px);box-sizing:border-box}
-.mcats .dtop{height:175px;border-radius:0;overflow:visible;background:#1e2250}
+.mcats .dtop{height:175px;border-radius:0;overflow:visible;background:#1e2250;position:sticky;top:0;z-index:4}
 .mcats .dtitle{top:30px}.arcsvg{position:absolute;left:0;top:0;pointer-events:none}
 .mcats .dgrid{padding-top:30px}
 </style>
