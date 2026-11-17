@@ -7,7 +7,7 @@
    While the bar is showing, --ckh on <html> holds its height so a page can lift its own bottom controls. */
 (function () {
   var KEY = 'burger_cart_v1', ACC = '#ffbd6e', INK = '#17100d';
-  var items = {}, subs = [], opts = { bar: true }, root, built = false, editKey = null;
+  var items = {}, subs = [], opts = { bar: true }, root, built = false, editKey = null, barOn = false;   // barOn: this page added something, so its bar shows
 
   function load() { try { items = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { items = items || {}; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {} }
@@ -82,8 +82,8 @@
   function render() {
     if (!built) return;
     var n = count(), t = total(), l = list();
-    root.classList.toggle('ck-has', n > 0);
-    document.documentElement.style.setProperty('--ckh', opts.bar && n > 0 ? '88px' : '0px');
+    root.classList.toggle('ck-has', n > 0 && barOn);
+    document.documentElement.style.setProperty('--ckh', opts.bar && n > 0 && barOn ? '88px' : '0px');
     $('ck-bc').textContent = $('ck-bc2').textContent = n; $('ck-bc').style.display = n ? 'grid' : 'none';
     $('ck-tt').textContent = $('ck-tt2').textContent = money(t);
     $('ck-go').textContent = money(t) + ' - Proceed to checkout'; $('ck-go').style.display = n ? '' : 'none';
@@ -92,7 +92,7 @@
         '<div class="ck-nm">' + esc(o.n) + '<small>' + money(o.p) + ' unit price</small></div><div class="ck-pr">' + money(o.q * o.p) + '</div></div>';
     }).join('') : '<div class="ck-empty">Nothing here yet.</div>';
     if (!n) $('ck-sheet').classList.remove('open');
-    subs.forEach(function (f) { try { f(n, t); } catch (e) {} });
+    subs.forEach(function (f) { try { f(n, t, barOn); } catch (e) {} });
   }
 
   function changed() { save(); render(); }
@@ -141,6 +141,7 @@
       if (!built) build();
       qty = Math.max(1, qty || 1);
       function commit() {
+        barOn = true;
         var k = String(item.key), o = items[k];
         if (o) o.q += qty; else items[k] = { n: item.n, p: Number(item.p) || 0, img: item.img || '', q: qty };
         changed(); pop(); if (done) done();

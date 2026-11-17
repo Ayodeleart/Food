@@ -260,11 +260,9 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
    ['swallow-soups', 'Swallow & Soups'],
    ['beans-plantain', 'Beans & Plantain'],
    ['yam-potato', 'Yam & Potato Dishes'],
-   ['chicken-turkey', 'Chicken & Turkey'],
+   ['chicken-turkey', 'Chicken, Turkey, Grills & BBQ'],
    ['beef-fish-seafood', 'Beef, Fish & Seafood'],
-   ['grills-bbq', 'Grills & BBQ'],
-   ['burgers-sandwiches-shawarma', 'Burgers, Sandwiches & Shawarma'],
-   ['pizza', 'Pizza'],
+   ['burgers-sandwiches-shawarma', 'Burgers, Sandwiches, Shawarma & Pizza'],
    ['small-chops-snacks', 'Small Chops & Snacks'],
    ['breakfast-specials', 'Breakfast & Specials'],
    ['salads-sides', 'Salads & Sides']].forEach(function (c, i) { addCat(c[0], c[1], BGS[i % BGS.length], 'Food'); });
@@ -648,8 +646,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   /* Categories that open their own page (circular reveal from the tap) */
   var PAGES = {
     'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html',
-    'burgers-sandwiches-shawarma': 'pages/dunuts.html',
-    'pizza': 'pages/dunuts.html',
+    'burgers-sandwiches-shawarma': 'pages/small-chops.html',
     'small-chops-snacks': 'pages/small-chops.html'
   };
   ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
@@ -660,6 +657,12 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function openCat(k, ev) {
     if (!PAGES[k]) { state.screen = 'menu'; state.cat = k; render(); return; }
     openPage(PAGES[k] + '?cat=' + k, CATS[k].bg, ev, CATS[k].label);
+  }
+  function satPx() {   // status-bar / notch height, measured here because iframes can't always see env()
+    var p = document.createElement('div');
+    p.style.cssText = 'position:fixed;top:0;left:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px)';
+    document.body.appendChild(p); var v = parseFloat(getComputedStyle(p).paddingTop) || 0; p.remove();
+    return v;
   }
   function openPage(src, bg, ev, label, wire) {
     if (document.getElementById('catpage')) return;
@@ -681,6 +684,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     }
     fr.addEventListener('load', function () {
       loaded = true;
+      try { fr.contentDocument.documentElement.style.setProperty('--sat', satPx() + 'px'); } catch (_) {}
       try {   // the bubble tea page has its own back button: use it, and hide ours
         var own = fr.contentDocument.querySelector('.top .round[aria-label="Back"]');
         if (own) { own.addEventListener('click', closeCat); bk.hidden = true; }

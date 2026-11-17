@@ -78,9 +78,9 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   var CATS = [
     ['rice-spaghetti-noodles', 'Rice, Spaghetti & Noodles', 'Food'], ['swallow-soups', 'Swallow & Soups', 'Food'],
     ['beans-plantain', 'Beans & Plantain', 'Food'], ['yam-potato', 'Yam & Potato Dishes', 'Food'],
-    ['chicken-turkey', 'Chicken & Turkey', 'Food'], ['beef-fish-seafood', 'Beef, Fish & Seafood', 'Food'],
-    ['grills-bbq', 'Grills & BBQ', 'Food'], ['burgers-sandwiches-shawarma', 'Burgers, Sandwiches & Shawarma', 'Food'],
-    ['pizza', 'Pizza', 'Food'], ['small-chops-snacks', 'Small Chops & Snacks', 'Food'],
+    ['chicken-turkey', 'Chicken, Turkey, Grills & BBQ', 'Food'], ['beef-fish-seafood', 'Beef, Fish & Seafood', 'Food'],
+    ['burgers-sandwiches-shawarma', 'Burgers, Sandwiches, Shawarma & Pizza', 'Food'],
+    ['small-chops-snacks', 'Small Chops & Snacks', 'Food'],
     ['breakfast-specials', 'Breakfast & Specials', 'Food'], ['salads-sides', 'Salads & Sides', 'Food'],
     ['soft-drinks-sodas', 'Soft Drinks & Sodas', 'Drinks'], ['fresh-juices', 'Fresh Juices', 'Drinks'],
     ['smoothies-milkshakes', 'Smoothies & Milkshakes', 'Drinks'], ['water', 'Water', 'Drinks']
@@ -250,13 +250,14 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
   function loadItems() {
     var box = document.getElementById('mlist');
-    rest('menu_items?select=id,name,price,image_url,description,available&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc').then(function (rows) {
+    rest('menu_items?select=*&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc').then(function (rows) {
       if (!box) return;
       box.className = 'card';
       box.innerHTML = rows.length ? rows.map(function (r) {
         return '<div class="row" data-id="' + r.id + '" data-img="' + esc(r.image_url || '') + '"><div class="thm">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" alt="">' : 'No pic') + '</div>' +
           '<input class="in n" value="' + esc(r.name) + '"><input class="in p" inputmode="decimal" value="' + Number(r.price).toFixed(2) + '">' +
           '<input class="in d" placeholder="Short description, e.g. Rice, chicken, plantain" value="' + esc(r.description || '') + '">' +
+          '<textarea class="in x" rows="3" placeholder="Details shown on the product page, e.g. ingredients, size, what is inside">' + esc(r.details || '') + '</textarea>' +
           '<label class="chk sm" style="margin:0"><input type="checkbox" class="av"' + (r.available === false ? '' : ' checked') + '> Available</label>' +
           '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
           (r.image_url ? '<button class="b ghost" data-ipicrm>Clear pic</button>' : '') + '<button class="b ghost" data-del>Delete</button></div>';
@@ -312,7 +313,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     if (b.hasAttribute('data-save') && id) {
       var n = row.querySelector('.n').value.trim(), p = parseFloat(row.querySelector('.p').value);
       if (!n || isNaN(p)) return toast('Enter a name and a price', true);
-      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { name: n, price: p, description: row.querySelector('.d').value.trim() || null, available: row.querySelector('.av').checked } }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
+      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { name: n, price: p, description: row.querySelector('.d').value.trim() || null, details: row.querySelector('.x').value.trim() || null, available: row.querySelector('.av').checked } }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
     } else if (b.hasAttribute('data-del') && id) {
       if (confirm('Delete this item?')) rest('menu_items?id=eq.' + id, { method: 'DELETE' }).then(function () { toast('Deleted'); loadItems(); }).catch(function (x) { toast(x.message, true); });
     } else if (b.id === 'aadd') {
