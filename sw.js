@@ -1,4 +1,4 @@
-const CACHE = 'burger-app-v26';
+const CACHE = 'burger-app-v27';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

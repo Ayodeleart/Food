@@ -3,6 +3,7 @@
 
    Checkout.init({ bar: true })          bar:false = no bottom bar (main app opens the sheet from its Cart tab)
    Checkout.add({ key, n, p, img }, qty, fromEl, done, toEl)   add an item (p = price number in naira); fromEl = optional element the dot flies from; toEl = optional element it flies to (default: the checkout bar)
+   Checkout.qty(key) = how many of that item are in the cart   Checkout.dec(key) = remove one (item disappears at 0)
    Checkout.open() / close()   Checkout.count() / total()   Checkout.onChange(fn)
    While the bar is showing, --ckh on <html> holds its height so a page can lift its own bottom controls. */
 (function () {
@@ -149,6 +150,8 @@
       fly(from, commit, to);
     },
     count: count, total: total, items: list,
+    qty: function (key) { var o = items[String(key)]; return o ? o.q : 0; },
+    dec: function (key) { var k = String(key), o = items[k]; if (!o) return; o.q -= 1; if (o.q <= 0) delete items[k]; changed(); },
     open: function () { if (!built) build(); if (count()) $('ck-sheet').classList.add('open'); else toast('Your cart is empty'); },
     close: function () { if (built) $('ck-sheet').classList.remove('open'); },
     onChange: function (f) { subs.push(f); },
