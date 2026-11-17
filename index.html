@@ -164,9 +164,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .scroll.menu{bottom:0}
 .scroll.menu .grid{padding-bottom:130px}
 .avatar{border-radius:22px;background:rgba(20,12,8,.32)}
-.glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.02) 45%,rgba(255,255,255,.12)),#C34725;-webkit-backdrop-filter:blur(16px) saturate(200%);backdrop-filter:blur(16px) saturate(200%);border:1px solid rgba(255,255,255,.38);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.7),inset -1.5px -1.5px 1px rgba(255,255,255,.28),inset 0 0 22px rgba(255,255,255,.12),0 12px 32px rgba(110,28,10,.38),0 2px 8px rgba(110,28,10,.25)}
-.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(130% 100% at 18% -10%,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),radial-gradient(90% 80% at 90% 120%,rgba(255,255,255,.22),rgba(255,255,255,0) 60%)}
-.gglide{position:absolute;top:-6px;left:0;width:0;height:calc(100% + 12px);border-radius:999px;overflow:hidden;pointer-events:none;z-index:3;will-change:left,width,transform;background:transparent;box-shadow:0 10px 22px -8px rgba(0,0,0,.45)}
+.glass{position:relative;background:#C34725;border:0;box-shadow:0 10px 24px rgba(110,28,10,.32)}
+.gglide{position:absolute;top:-6px;left:0;width:0;height:calc(100% + 12px);border-radius:999px;overflow:hidden;pointer-events:none;z-index:3;will-change:left,width,transform;background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);box-shadow:0 10px 22px -8px rgba(0,0,0,.45)}
 .gclone{position:absolute;top:6px;left:0;display:flex;padding:6px;box-sizing:border-box;transform:scale(1.15)}
 .gclone .gb{transition:none;pointer-events:none}
 .gglide::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 1px 2px 2px -1px rgba(255,255,255,.75),inset -1px -2px 2px -1px rgba(255,255,255,.35),inset 0 4px 6px -4px rgba(255,255,255,.45),inset 0 -4px 6px -4px rgba(255,255,255,.3)}
@@ -406,7 +405,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function spRender() {
     if (!gl || !sp) return;
     var w = sp.R - sp.L, base = gtabs[0].offsetWidth + PADX * 2, st = w / base,
-        sq = Math.max(.8, Math.min(1, 1 - (st - 1) * .16));
+        sq = Math.max(.74, Math.min(1.12, 1 - (st - 1) * .22));
     gl.style.left = sp.L + 'px'; gl.style.width = w + 'px'; gl.style.transform = 'scaleY(' + sq + ')';
     gc.style.left = (-sp.L) + 'px'; gc.style.transformOrigin = ((sp.L + sp.R) / 2) + 'px 50%';
     for (var i = 0; i < gtabs.length; i++) {
@@ -421,8 +420,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     var dt = Math.min((now - spLast) / 1000, 1 / 20); spLast = now;
     var right = (t[0] + t[1]) / 2 > (sp.L + sp.R) / 2, kL = right ? 450 : 2800, kR = right ? 2800 : 450, h = 1 / 120, n = Math.max(1, Math.round(dt / h));
     for (var i = 0; i < n; i++) {
-      sp.vL += ((t[0] - sp.L) * kL - sp.vL * 2 * Math.sqrt(kL) * (right ? .6 : .9)) * h; sp.L += sp.vL * h;
-      sp.vR += ((t[1] - sp.R) * kR - sp.vR * 2 * Math.sqrt(kR) * (right ? .9 : .6)) * h; sp.R += sp.vR * h;
+      sp.vL += ((t[0] - sp.L) * kL - sp.vL * 2 * Math.sqrt(kL) * (right ? .3 : .45)) * h; sp.L += sp.vL * h;
+      sp.vR += ((t[1] - sp.R) * kR - sp.vR * 2 * Math.sqrt(kR) * (right ? .45 : .3)) * h; sp.R += sp.vR * h;
       if (sp.R < sp.L + 40) sp.R = sp.L + 40;
     }
     if (Math.abs(t[0] - sp.L) < .4 && Math.abs(t[1] - sp.R) < .4 && Math.abs(sp.vL) < 3 && Math.abs(sp.vR) < 3) {
