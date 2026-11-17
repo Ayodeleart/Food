@@ -310,10 +310,40 @@ label.chk.sm input{width:18px;height:18px;margin:0}
           '<input class="in d" placeholder="Short description, e.g. Rice, chicken, plantain" value="' + esc(r.description || '') + '">' +
           '<textarea class="in x" rows="3" placeholder="Details shown on the product page, e.g. ingredients, size, what is inside">' + esc(r.details || '') + '</textarea>' +
           '<label class="chk sm" style="margin:0"><input type="checkbox" class="av"' + (r.available === false ? '' : ' checked') + '> Available</label>' +
-          '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
+          (isDrinkCat() && r.image_url ? '<button class="b ghost" data-m3d>Make 3D</button><span class="muted" data-mst></span>' : '') + '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
           (r.image_url ? '<button class="b ghost" data-ipicrm>Clear pic</button>' : '') + '<button class="b ghost" data-del>Delete</button></div>';
       }).join('') : '<span class="muted">No items in this category yet.</span>';
+      if (isDrinkCat()) rest('menu_images?select=key,image_url&key=like.models/items/*').then(function (ms) {
+        ms.forEach(function (m) {
+          var id = m.key.split('/')[2], row = box.querySelector('.row[data-id="' + id + '"]'); if (!row) return;
+          var st = row.querySelector('[data-mst]'), bt = row.querySelector('[data-m3d]'); if (st) st.textContent = '3D ready'; if (bt) bt.textContent = 'Redo 3D';
+          if (!row.querySelector('[data-m3drm]') && bt) { var rm = document.createElement('button'); rm.className = 'b ghost'; rm.setAttribute('data-m3drm', ''); rm.textContent = 'Remove 3D'; bt.parentNode.insertBefore(rm, bt.nextSibling); }
+        });
+      }).catch(function () {});
     }).catch(function (e) { if (box) { box.className = 'card muted'; box.textContent = 'Could not load: ' + e.message; } });
+  }
+  function isDrinkCat() { for (var i = 0; i < MENU_CATS.length; i++) if (MENU_CATS[i][0] === menuCat) return MENU_CATS[i][2] === 'Drinks'; return false; }
+  /* picture -> 3D model through /api/tripo; polls until Tripo is done (about a minute or two) */
+  function make3d(row) {
+    var id = row.getAttribute('data-id'), img = row.getAttribute('data-img'); if (!img) return toast('Add a picture first', true);
+    busy('Starting 3D…');
+    fetch('../api/tripo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_url: img.split('?')[0] }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Could not start 3D'); return j.task_id; }); })
+      .then(function (task) {
+        var t0 = Date.now();
+        function poll() {
+          return fetch('../api/tripo?id=' + encodeURIComponent(task) + '&item=' + encodeURIComponent(id)).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || '3D failed'); return j; }); })
+            .then(function (j) {
+              if (j.status === 'success') return j;
+              if (j.status === 'failed') throw new Error('Tripo could not make a 3D model from that picture');
+              if (Date.now() - t0 > 300000) throw new Error('3D is taking too long. Try again in a minute.');
+              busy('Making 3D… ' + (j.progress || 0) + '%');
+              return new Promise(function (ok) { setTimeout(ok, 3000); }).then(poll);
+            });
+        }
+        return poll();
+      }).then(function () { busy(); toast('3D model ready'); loadItems(); })
+      .catch(function (e) { busy(); toast(e.message, true); });
   }
   function catLabel() { for (var i = 0; i < MENU_CATS.length; i++) if (MENU_CATS[i][0] === menuCat) return MENU_CATS[i][1]; return menuCat; }
   function addRows(list) {
@@ -365,6 +395,8 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     var up = b.getAttribute('data-up'), rm = b.getAttribute('data-rm');
     if (up) { pending = up; fileEl.click(); return; }
     if (rm) { if (confirm('Remove this picture?')) { b.disabled = true; removeImg(rm).then(function () { toast('Removed'); show(tab); }).catch(function (x) { toast(x.message, true); b.disabled = false; }); } return; }
+    if (b.hasAttribute('data-m3d') && iid) { make3d(irow); return; }
+    if (b.hasAttribute('data-m3drm') && iid) { if (confirm('Remove the 3D model for this drink?')) rest('menu_images?key=eq.models/items/' + iid, { method: 'DELETE' }).then(function () { toast('3D removed'); loadItems(); }).catch(function (x) { toast(x.message, true); }); return; }
     var row = b.closest('.row'), id = row && row.getAttribute('data-id');
     if (b.hasAttribute('data-save') && id) {
       var n = row.querySelector('.n').value.trim(), p = parseFloat(row.querySelector('.p').value);

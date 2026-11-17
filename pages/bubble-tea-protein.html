@@ -90,6 +90,7 @@ body{background:#8a8f88;display:flex;align-items:center;justify-content:center;f
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="../checkout.js"></script>
 <script>
+(async () => {
 const ngn = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const PRODUCTS = [
@@ -97,6 +98,22 @@ const PRODUCTS = [
   {name:'Mango Bubble Tea',     price:24.00, tag:'MANGO FLAVOR',     model:'', bg:'#f6c47e', card:'#c4560f', ink:'#5a1f00', body:['#ee9230','#f6a644','#d97a1a'], cup:'#fbb95a', pearl:'#3a1d0a', fruit:'#f4b400'},
   {name:'Matcha Bubble Tea',    price:26.00, tag:'MATCHA FLAVOR',    model:'', bg:'#b8dca6', card:'#1f6b3d', ink:'#0f3d22', body:['#4f9a58','#63ad69','#3f8648'], cup:'#8ccf8f', pearl:'#12301c', fruit:'#2f6b3a'}
 ];
+/* Drinks uploaded in the admin for this category replace the built-in three (each keeps a jar colour set); a 3D model made in the admin shows instead of the jar. */
+{
+  const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm', H = { apikey: SBK, Authorization: 'Bearer ' + SBK };
+  const cat = new URLSearchParams(location.search).get('cat');
+  if (cat) try {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), 4000);
+    const [r, m] = await Promise.all([
+      fetch(SB + '/rest/v1/menu_items?select=*&category_id=eq.' + encodeURIComponent(cat) + '&order=created_at.asc', { headers: H, signal: c.signal }),
+      fetch(SB + '/rest/v1/menu_images?select=key,image_url&key=like.models/items/*', { headers: H, signal: c.signal })]);
+    clearTimeout(t);
+    const rows = r.ok ? await r.json() : [], ms = m.ok ? await m.json() : [], mm = {};
+    ms.forEach(x => { mm[x.key.split('/')[2]] = x.image_url; });
+    if (rows.length) { const base = PRODUCTS.slice(); PRODUCTS.length = 0;
+      rows.forEach((x, i) => PRODUCTS.push(Object.assign({}, base[i % base.length], { name: x.name, price: Number(x.price) || 0, tag: String(x.description || 'FLAVOR').toUpperCase().slice(0, 24), model: mm[x.id] || '', image: x.image_url || '' }))); }
+  } catch (e) {}
+}
 const N = PRODUCTS.length;
 const SPACING = 24;        // degrees between neighbouring drinks on the arc
 const BAR_H = 84;
@@ -492,6 +509,7 @@ layout();
 requestAnimationFrame(tick);
 Checkout.init();
 document.querySelector('.round[aria-label="Cart"]').addEventListener('click', () => Checkout.open());
+})();
 </script>
 </body>
 </html>
