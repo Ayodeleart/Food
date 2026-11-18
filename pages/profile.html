@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--page:#e9e0e2;--grey:#8c8c8c;--line:#262626;box-sizing:border-box}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--page:#e9e0e2}}
+:root[data-theme="dark"]{--page:#e9e0e2}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:transparent;overflow:hidden;font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif}
+#cv{position:fixed;left:0;top:0;width:100%;height:100%;z-index:10;pointer-events:none;display:block}
+
+.profbtn,.close,.back{position:fixed;z-index:30;border:0;background:none;cursor:pointer;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;top:calc(max(var(--sat,0px),env(safe-area-inset-top,0px)) + 6px)}
+.profbtn{left:37px;overflow:hidden;display:none}
+.profbtn .pi{display:block;transition:opacity .12s}
+.profbtn img{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);border-radius:50%;object-fit:cover;display:none;transition:opacity .12s}
+.profbtn.has img{display:block}.profbtn.has .pi{display:none}
+body.open .profbtn{pointer-events:none}
+body.open .profbtn .pi,body.open .profbtn img{opacity:0}
+.close{right:8px;opacity:0;pointer-events:none;transition:opacity .12s}
+body.open .close{opacity:1;pointer-events:auto;transition:opacity .15s .16s}
+.back{left:37px;opacity:0;pointer-events:none;transition:opacity .12s}
+.back span{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:grid;place-items:center}
+.back.on{opacity:1;pointer-events:auto;transition:opacity .2s}
+svg{display:block}
+.profbtn:focus-visible,.close:focus-visible,.back:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+.menu{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;padding:calc(max(var(--sat,0px),env(safe-area-inset-top,0px)) + 72px) 24px 44px;overflow-y:auto;pointer-events:none;color:#fff}
+body.open .menu{pointer-events:auto}
+.inner{margin:0 auto auto;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center}
+.inner.anim{animation:vin .28s ease both}
+@keyframes vin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.inner.anim{animation:none}}
+.m{color:transparent;text-align:center;line-height:1.35;border:0;background:none;font-family:inherit;padding:0 8px}
+.menu.live .m{color:var(--c)}
+.a{pointer-events:none;cursor:pointer;padding:9px 12px}
+body.open .a{pointer-events:auto}
+.a:focus-visible,.lnk:focus-visible,.pill:focus-visible,.tab:focus-visible,summary:focus-visible,.av:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+.avwrap{opacity:0;margin:14px 0 4px;transition:opacity .1s}
+body.open .avwrap{opacity:1;transition:opacity .25s .32s}
+.av{width:88px;height:88px;border-radius:50%;border:1px solid #333;background:#121212;display:grid;place-items:center;overflow:hidden;cursor:pointer;padding:0}
+.av img{width:100%;height:100%;object-fit:cover}
+
+.h{font-size:20px;font-weight:700;text-align:center;margin-bottom:6px}
+.sub{font-size:13px;color:var(--grey);text-align:center;margin-bottom:10px;line-height:1.5}
+.sl{font-size:12px;color:var(--grey);margin:26px 0 2px;width:100%;text-align:left}
+.card{width:100%;text-align:left;padding:16px 0;border-bottom:1px solid var(--line)}
+.card b{display:block;font-weight:600;font-size:16px}
+.card p{color:var(--grey);font-size:13px;line-height:1.5;margin-top:3px}
+.tg{font-size:11px;border:1px solid #555;border-radius:99px;padding:2px 8px;margin-left:8px;color:#bbb;font-weight:500;vertical-align:middle}
+.acts{display:flex;gap:18px;margin-top:10px}
+.lnk{background:none;border:0;color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px 0}
+.lnk.dim{color:var(--grey)}
+.pill{margin-top:26px;border:1px solid rgba(255,255,255,.5);border-radius:99px;background:none;color:#fff;font:inherit;font-weight:600;font-size:15px;padding:13px 30px;cursor:pointer}
+.pill.fill{background:#fff;color:#000;border-color:#fff}
+.tabs{display:flex;gap:18px;margin:14px 0 2px;width:100%;justify-content:center}
+.tab{background:none;border:0;color:var(--grey);font:inherit;font-size:13px;font-weight:600;padding:6px 0;cursor:pointer;border-bottom:1px solid transparent}
+.tab.on{color:#fff;border-bottom-color:#fff}
+.ln{display:flex;justify-content:space-between;gap:16px;width:100%;padding:8px 0;font-size:14px;text-align:left}
+.ln span:last-child{color:#d8d8d8;text-align:right}
+.ln.t{font-weight:700;border-top:1px solid var(--line);margin-top:4px;padding-top:12px}.ln.t span:last-child{color:#fff}
+.f{display:block;width:100%;margin-top:16px;text-align:left}
+.f small{display:block;font-size:12px;color:var(--grey);margin-bottom:2px}
+.f input,.f textarea{display:block;width:100%;background:transparent;border:0;border-bottom:1px solid #3a3a3a;border-radius:0;color:#fff;font:inherit;font-size:16px;padding:8px 0;resize:none}
+.f input:focus,.f textarea:focus{border-bottom-color:#fff}
+.chk{display:flex;gap:10px;align-items:center;margin-top:18px;width:100%;font-size:14px;text-align:left}
+.chk input{accent-color:#fff;width:18px;height:18px}
+.err{color:#ff9a9a;font-size:13px;margin-top:12px;min-height:18px;text-align:left;width:100%}
+details{width:100%;text-align:left;border-bottom:1px solid var(--line);padding:14px 0}
+summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none}
+summary::-webkit-details-marker{display:none}
+details p{margin-top:8px;color:var(--grey);font-size:13px;line-height:1.6}
+a.lnk{display:inline-block}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-hidden="true"></canvas>
+
+<button class="profbtn" id="open" aria-label="Open profile menu" aria-expanded="false" aria-controls="menu">
+  <svg class="pi" width="20" height="20" viewBox="0 0 18 18" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="6" r="3"/><path d="M3 15.5c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/></svg>
+  <img id="topimg" alt="">
+</button>
+<button class="back" id="back" aria-label="Back"><span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></span></button>
+<button class="close" id="close" aria-label="Close menu">
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg>
+</button>
+<input type="file" id="file" accept="image/*" hidden>
+
+<nav class="menu" id="menu" aria-label="Profile settings" inert></nav>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var lo = document.createElement('canvas'), lctx = lo.getContext('2d');
+  var openBtn = document.getElementById('open'), closeBtn = document.getElementById('close');
+  var backBtn = document.getElementById('back'), menu = document.getElementById('menu');
+  var fileIn = document.getElementById('file'), topimg = document.getElementById('topimg');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var OPEN_MS = reduce ? 1 : 540, CLOSE_MS = reduce ? 1 : 480, TEXT_MAX = reduce ? 1 : 1400;
+  var wasOpen = false, u = 0, uT = 0, T = 0, TT = 0, raf = null, last = 0, live = false, isOpen = false;
+  var w, h, dpr, s, img, circles = [], items = [];
+
+  function clamp(x,a,b){ return x < a ? a : x > b ? b : x; }
+  function easeOut(t){ return 1 - Math.pow(1 - t, 3); }
+  function smooth(t){ t = clamp(t,0,1); return t*t*(3-2*t); }
+  function esc(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function money(n){ return '$' + n.toFixed(2); }
+  function uid(){ return 'x' + Math.random().toString(36).slice(2,8); }
+
+  /* ---------------- data ---------------- */
+  var KEY = 'goo-menu-v1';
+  function defaults(){
+    return {
+      photo:null,
+      profile:{name:'',username:'',email:'',phone:''},
+      filter:'all',
+      addresses:[
+        {id:'a1',label:'Home',street:'12 Admiralty Way',area:'Lekki Phase 1',state:'Lagos',phone:'',def:true},
+        {id:'a2',label:'Work',street:'4 Adeola Odeku Street',area:'Victoria Island',state:'Lagos',phone:'',def:false}
+      ],
+      cards:[
+        {id:'c1',brand:'Visa',last4:'4417',exp:'08/28',name:'',def:true},
+        {id:'c2',brand:'Mastercard',last4:'8203',exp:'02/27',name:'',def:false}
+      ],
+      orders:[
+        {id:'10490',date:'17 Nov 2026',status:'processing',fee:6,items:[['Phone case',1,23]]},
+        {id:'10482',date:'14 Nov 2026',status:'delivered',fee:6,items:[['Wireless earbuds',1,62],['USB-C cable',2,9]]},
+        {id:'10477',date:'16 Nov 2026',status:'ontheway',fee:6,items:[['Desk lamp',1,36.5]]},
+        {id:'10431',date:'2 Nov 2026',status:'cancelled',fee:6,items:[['Backpack',1,98],['Water bottle',2,12]]}
+      ]
+    };
+  }
+  function load(){
+    var d = defaults();
+    try{ var r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r) for (var k in r) d[k] = r[k]; }catch(e){}
+    return d;
+  }
+  var store = load();
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+  function find(list,id){ for (var i=0;i<list.length;i++) if (list[i].id === id) return list[i]; return null; }
+
+  var STATUS = {processing:'Processing',ontheway:'On the way',delivered:'Delivered',cancelled:'Cancelled'};
+  function orderTotal(o){ return o.items.reduce(function(a,i){ return a + i[1]*i[2]; },0) + o.fee; }
+
+  /* ---------------- views ---------------- */
+  var WHITE = '#fff', GREY = '#8c8c8c';
+  function L(text,o){
+    o = o || {};
+    var st = 'font-size:'+(o.s||16)+'px;font-weight:'+(o.w||500)+';margin-top:'+(o.mt||0)+'px;--c:'+(o.c||WHITE);
+    var tag = (o.go || o.act) ? 'button' : 'div';
+    var at = (o.go ? ' data-go="'+o.go+'"' : '') + (o.act ? ' data-act="'+o.act+'"' : '');
+    return '<'+tag+' class="m'+((o.go||o.act)?' a':'')+'" style="'+st+'" data-c="'+(o.c||WHITE)+'"'+at+'>'+esc(text)+'</'+tag+'>';
+  }
+  function fld(label,name,val,o){
+    o = o || {};
+    var inp = o.area ? '<textarea name="'+name+'" rows="4">'+esc(val)+'</textarea>'
+      : '<input name="'+name+'" value="'+esc(val)+'" type="'+(o.type||'text')+'"'+(o.attr?' '+o.attr:'')+' autocomplete="off">';
+    return '<label class="f"><small>'+label+'</small>'+inp+'</label>';
+  }
+  function topPhoto(){
+    return store.photo ? '<img src="'+store.photo+'" alt="Profile picture">' :
+      '<svg width="34" height="34" viewBox="0 0 18 18" fill="none" stroke="#666" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="6" r="3"/><path d="M3 15.5c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/></svg>';
+  }
+
+  var VIEWS = {
+    profile: function(){
+      var p = store.profile, un = (p.username || '').replace(/^@/,'');
+      return L('Profile',{s:13,c:GREY}) +
+        '<div class="avwrap"><button class="av" data-act="photo" aria-label="Change profile picture">'+topPhoto()+'</button></div>' +
+        L(store.photo ? 'Change photo' : 'Add photo',{s:13,c:GREY,act:'photo'}) +
+        (p.name ? L(p.name,{s:22,w:700,mt:8}) : '') +
+        (un ? L('@'+un,{s:13,c:GREY,mt:2}) : '') +
+        L('Edit profile',{s:16,w:600,go:'editprofile',mt:10}) +
+        L('My Account',{s:13,c:GREY,mt:26}) +
+        L('Manage Address',{go:'address',mt:6}) + L('Payment',{go:'payment'}) +
+        L('Orders',{go:'orders'}) + L('Help Center',{go:'help'}) +
+        L('Logout',{go:'logout',w:600,mt:18});
+    },
+    editprofile: function(){
+      var p = store.profile;
+      return '<div class="h">Edit profile</div><div class="sub">Your photo and details</div>' +
+        '<div class="avwrap" style="opacity:1;margin:8px 0 0"><button class="av" data-act="photo" aria-label="Change profile picture">'+topPhoto()+'</button></div>' +
+        '<div class="acts"><button class="lnk" data-act="photo">'+(store.photo?'Change photo':'Upload photo')+'</button>'+(store.photo?'<button class="lnk dim" data-act="rmphoto">Remove photo</button>':'')+'</div>' +
+        '<form data-form="profile" style="width:100%" novalidate>' +
+        fld('Full name','name',p.name) + fld('Username','username',p.username) +
+        fld('Email','email',p.email,{type:'email'}) + fld('Phone','phone',p.phone,{type:'tel'}) +
+        '<div class="err" id="err"></div><div style="text-align:center"><button class="pill fill" type="submit">Save changes</button></div></form>';
+    },
+    address: function(){
+      var list = store.addresses.map(function(a){
+        return '<div class="card"><b>'+esc(a.label)+(a.def?'<span class="tg">Default</span>':'')+'</b><p>'+esc(a.street)+'<br>'+esc(a.area)+(a.state?', '+esc(a.state):'')+(a.phone?'<br>'+esc(a.phone):'')+'</p>' +
+          '<div class="acts"><button class="lnk" data-go="addrform" data-id="'+a.id+'">Edit</button>'+(a.def?'':'<button class="lnk" data-act="addr-def" data-id="'+a.id+'">Make default</button>')+'<button class="lnk dim" data-act="addr-del" data-id="'+a.id+'">Delete</button></div></div>';
+      }).join('');
+      return '<div class="h">Manage Address</div><div class="sub">Where we deliver your orders</div>' +
+        (list || '<div class="sub" style="margin:24px 0">No saved addresses yet.</div>') +
+        '<button class="pill" data-go="addrform">Add new address</button>';
+    },
+    addrform: function(id){
+      var a = find(store.addresses,id) || {label:'',street:'',area:'',state:'',phone:'',def:!store.addresses.length};
+      return '<div class="h">'+(id?'Edit address':'New address')+'</div>' +
+        '<form data-form="addr" data-id="'+esc(id||'')+'" style="width:100%" novalidate>' +
+        fld('Label (Home, Work, Other)','label',a.label) + fld('Street address','street',a.street) +
+        fld('Area or city','area',a.area) + fld('State','state',a.state) + fld('Phone (optional)','phone',a.phone,{type:'tel'}) +
+        '<label class="chk"><input type="checkbox" name="def"'+(a.def?' checked':'')+'> Make this my default address</label>' +
+        '<div class="err" id="err"></div><div style="text-align:center"><button class="pill fill" type="submit">Save address</button></div></form>';
+    },
+    payment: function(){
+      var list = store.cards.map(function(c){
+        return '<div class="card"><b>'+esc(c.brand)+' ending '+esc(c.last4)+(c.def?'<span class="tg">Default</span>':'')+'</b><p>Expires '+esc(c.exp)+(c.name?'<br>'+esc(c.name):'')+'</p>' +
+          '<div class="acts">'+(c.def?'':'<button class="lnk" data-act="card-def" data-id="'+c.id+'">Make default</button>')+'<button class="lnk dim" data-act="card-del" data-id="'+c.id+'">Remove</button></div></div>';
+      }).join('');
+      return '<div class="h">Payment</div><div class="sub">Cards used at checkout</div>' +
+        (list || '<div class="sub" style="margin:24px 0">No payment methods yet.</div>') +
+        '<button class="pill" data-go="cardform">Add payment method</button>';
+    },
+    cardform: function(){
+      return '<div class="h">New payment method</div><div class="sub">Only the last four digits are kept</div>' +
+        '<form data-form="card" style="width:100%" novalidate>' +
+        fld('Card type (Visa, Mastercard)','brand','') + fld('Name on card','name','') +
+        fld('Last 4 digits','last4','',{attr:'inputmode="numeric" maxlength="4"'}) + fld('Expiry (MM/YY)','exp','',{attr:'maxlength="5" placeholder="08/28"'}) +
+        '<label class="chk"><input type="checkbox" name="def"'+(store.cards.length?'':' checked')+'> Make this my default card</label>' +
+        '<div class="err" id="err"></div><div style="text-align:center"><button class="pill fill" type="submit">Save card</button></div></form>';
+    },
+    orders: function(){
+      var f = store.filter;
+      var shown = store.orders.filter(function(o){
+        return f==='all' || (f==='active' && (o.status==='processing'||o.status==='ontheway')) || o.status===f;
+      });
+      var tabs = [['all','All'],['active','Active'],['delivered','Delivered'],['cancelled','Cancelled']].map(function(t){
+        return '<button class="tab'+(f===t[0]?' on':'')+'" data-act="filter" data-id="'+t[0]+'">'+t[1]+'</button>';
+      }).join('');
+      var list = shown.map(function(o){
+        var n = o.items.reduce(function(a,i){return a+i[1];},0);
+        return '<div class="card"><b>Order #'+o.id+'<span class="tg">'+STATUS[o.status]+'</span></b><p>'+n+' item'+(n>1?'s':'')+', '+o.date+', '+money(orderTotal(o))+'</p>' +
+          '<div class="acts"><button class="lnk" data-go="order" data-id="'+o.id+'">View details</button></div></div>';
+      }).join('');
+      return '<div class="h">Orders</div><div class="tabs">'+tabs+'</div>' +
+        (list || '<div class="sub" style="margin:28px 0">No orders in this view.</div>');
+    },
+    order: function(id){
+      var o = find(store.orders,id); if (!o) return '<div class="h">Order not found</div>';
+      var reached = {processing:1,ontheway:3,delivered:4,cancelled:0}[o.status];
+      var steps = ['Order placed','Packed','On the way','Delivered'].map(function(t,i){
+        return '<div class="ln"><span>'+t+'</span><span>'+(o.status==='cancelled'?'-':(i<reached?'Done':'Pending'))+'</span></div>';
+      }).join('');
+      var items = o.items.map(function(i){ return '<div class="ln"><span>'+esc(i[0])+' x'+i[1]+'</span><span>'+money(i[1]*i[2])+'</span></div>'; }).join('');
+      var sub = o.items.reduce(function(a,i){return a+i[1]*i[2];},0);
+      var ad = find(store.addresses,'') || store.addresses.filter(function(a){return a.def;})[0] || store.addresses[0];
+      var cd = store.cards.filter(function(c){return c.def;})[0] || store.cards[0];
+      return '<div class="h">Order #'+o.id+'</div><div class="sub">'+o.date+', '+STATUS[o.status]+'</div>' +
+        '<div class="sl">Items</div>'+items+
+        '<div class="ln"><span>Subtotal</span><span>'+money(sub)+'</span></div><div class="ln"><span>Delivery</span><span>'+money(o.fee)+'</span></div><div class="ln t"><span>Total</span><span>'+money(orderTotal(o))+'</span></div>' +
+        '<div class="sl">Progress</div>'+steps +
+        '<div class="sl">Delivery address</div><div class="ln"><span>'+(ad?esc(ad.street)+', '+esc(ad.area):'No address saved')+'</span></div>' +
+        '<div class="sl">Paid with</div><div class="ln"><span>'+(cd?esc(cd.brand)+' ending '+esc(cd.last4):'No card saved')+'</span></div>' +
+        (o.status==='processing' ? '<div style="text-align:center"><button class="pill" data-act="order-cancel" data-id="'+o.id+'">Cancel order</button></div>' : '');
+    },
+    help: function(){
+      var faqs = [
+        ['How do I track my order?','Open Orders, choose an order and view its progress. Orders on the way show the latest step.'],
+        ['Can I change my delivery address?','Yes. Update it in Manage Address before the order is packed. After that, contact support.'],
+        ['How do I cancel an order?','Orders that are still processing can be cancelled from the order details page.'],
+        ['Which payment methods can I use?','Saved cards can be managed in Payment. Set one as default for faster checkout.'],
+        ['How do refunds work?','Refunds go back to the original payment method within 5 to 7 working days.']
+      ].map(function(q){ return '<details><summary>'+q[0]+'</summary><p>'+q[1]+'</p></details>'; }).join('');
+      return '<div class="h">Help Center</div><div class="sub">Quick answers and ways to reach us</div>' + faqs +
+        '<div class="sl">Contact us</div>' +
+        '<div class="card"><b>Send us a message</b><p>We reply within 24 hours.</p><div class="acts"><button class="lnk" data-go="msg">Write a message</button></div></div>' +
+        '<div class="card"><b>Call us</b><p>Monday to Saturday, 8am to 6pm</p><div class="acts"><a class="lnk" href="tel:+2348000000000">+234 800 000 0000</a></div></div>' +
+        '<div class="card"><b>Email us</b><p>Include your order number if you have one.</p><div class="acts"><a class="lnk" href="mailto:support@example.com">support@example.com</a></div></div>';
+    },
+    msg: function(){
+      return '<div class="h">Message support</div>' +
+        '<form data-form="msg" style="width:100%" novalidate>' + fld('Subject','subject','') + fld('Message','body','',{area:1}) +
+        '<div class="err" id="err"></div><div style="text-align:center"><button class="pill fill" type="submit">Send message</button></div></form>';
+    },
+    sent: function(){
+      return '<div class="h">Message sent</div><div class="sub" style="margin-top:6px">Thanks. Our team will reply within 24 hours.</div>' +
+        '<button class="pill" data-act="home">Done</button>';
+    },
+    logout: function(){
+      return '<div class="h">Log out of your account?</div>' +
+        '<button class="pill fill" data-act="confirm-logout">Logout</button><button class="lnk dim" data-act="home" style="margin-top:14px">Cancel</button>';
+    }
+  };
+
+  /* ---------------- navigation ---------------- */
+  var ROOT = {name:'profile'}, cur = ROOT, stack = [];
+  function onRoot(){ return cur.name === 'profile'; }
+  function setLive(v){ live = v; menu.classList.toggle('live', v); }
+  function renderView(anim){
+    menu.innerHTML = '<div class="inner'+(anim?' anim':'')+'">'+VIEWS[cur.name](cur.arg)+'</div>';
+    menu.scrollTop = 0;
+    if (onRoot() && !live) measure();
+    backBtn.classList.toggle('on', isOpen && stack.length > 0);
+  }
+  function go(name,arg){ stack.push(cur); cur = {name:name,arg:arg}; setLive(true); renderView(true); }
+  function goBack(){ cur = stack.pop() || ROOT; setLive(true); renderView(true); }
+  function goHome(){ stack = []; cur = ROOT; setLive(true); renderView(true); }
+  function measure(){
+    items = Array.prototype.map.call(menu.querySelectorAll('.m'), function(el){
+      var r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+      return {t:el.textContent, x:r.left+r.width/2, y:r.top+r.height/2, size:parseFloat(cs.fontSize), wt:cs.fontWeight, c:el.getAttribute('data-c')};
+    });
+  }
+  function applyPhoto(){
+    topimg.src = store.photo || '';
+    openBtn.classList.toggle('has', !!store.photo);
+  }
+
+  /* events */
+  menu.addEventListener('click', function(e){
+    var el = e.target.closest('[data-go],[data-act]'); if (!el) return;
+    var g = el.getAttribute('data-go'), a = el.getAttribute('data-act'), id = el.getAttribute('data-id');
+    if (g){ go(g, id || undefined); return; }
+    if (a === 'photo') fileIn.click();
+    else if (a === 'rmphoto'){ store.photo = null; save(); applyPhoto(); renderView(false); }
+    else if (a === 'addr-def'){ store.addresses.forEach(function(x){ x.def = x.id === id; }); save(); renderView(false); }
+    else if (a === 'addr-del'){ var wasDef = (find(store.addresses,id)||{}).def; store.addresses = store.addresses.filter(function(x){ return x.id !== id; }); if (wasDef && store.addresses[0]) store.addresses[0].def = true; save(); renderView(false); }
+    else if (a === 'card-def'){ store.cards.forEach(function(x){ x.def = x.id === id; }); save(); renderView(false); }
+    else if (a === 'card-del'){ var wd = (find(store.cards,id)||{}).def; store.cards = store.cards.filter(function(x){ return x.id !== id; }); if (wd && store.cards[0]) store.cards[0].def = true; save(); renderView(false); }
+    else if (a === 'filter'){ store.filter = id; save(); renderView(false); }
+    else if (a === 'order-cancel'){ var o = find(store.orders,id); if (o && o.status === 'processing'){ o.status = 'cancelled'; save(); renderView(false); } }
+    else if (a === 'home') goHome();
+    else if (a === 'confirm-logout'){ setOpen(false); }
+  });
+  menu.addEventListener('submit', function(e){
+    e.preventDefault();
+    var f = e.target, kind = f.getAttribute('data-form'), id = f.getAttribute('data-id');
+    var v = {}; Array.prototype.forEach.call(f.elements, function(x){ if (x.name) v[x.name] = x.type === 'checkbox' ? x.checked : x.value.trim(); });
+    var err = document.getElementById('err');
+    function fail(m){ err.textContent = m; }
+    if (kind === 'profile'){
+      if (v.email && !/^\S+@\S+\.\S+$/.test(v.email)) return fail('Enter a valid email address.');
+      store.profile = {name:v.name,username:v.username,email:v.email,phone:v.phone}; save(); goBack();
+    } else if (kind === 'addr'){
+      if (!v.label || !v.street || !v.area) return fail('Label, street address and area are required.');
+      var a = id ? find(store.addresses,id) : null;
+      if (!a){ a = {id:uid()}; store.addresses.push(a); }
+      a.label = v.label; a.street = v.street; a.area = v.area; a.state = v.state; a.phone = v.phone;
+      if (v.def || store.addresses.length === 1) store.addresses.forEach(function(x){ x.def = x === a; });
+      save(); goBack();
+    } else if (kind === 'card'){
+      if (!v.brand) return fail('Enter the card type.');
+      if (!/^\d{4}$/.test(v.last4)) return fail('Enter the last 4 digits.');
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(v.exp)) return fail('Enter the expiry as MM/YY.');
+      var c = {id:uid(),brand:v.brand,last4:v.last4,exp:v.exp,name:v.name,def:false};
+      store.cards.push(c);
+      if (v.def || store.cards.length === 1) store.cards.forEach(function(x){ x.def = x === c; });
+      save(); goBack();
+    } else if (kind === 'msg'){
+      if (!v.subject || !v.body) return fail('Add a subject and a message.');
+      stack.pop(); stack.push(ROOT); cur = {name:'sent'}; renderView(true);
+    }
+  });
+  fileIn.addEventListener('change', function(){
+    var f = fileIn.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function(){
+      var im = new Image();
+      im.onload = function(){
+        var c = document.createElement('canvas'); c.width = c.height = 256;
+        var m = Math.min(im.width, im.height);
+        c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,256,256);
+        store.photo = c.toDataURL('image/jpeg',0.85); save(); applyPhoto(); renderView(false);
+      };
+      im.src = rd.result;
+    };
+    rd.readAsDataURL(f); fileIn.value = '';
+  });
+  backBtn.addEventListener('click', goBack);
+  openBtn.addEventListener('click', function(){ setOpen(true); });
+  closeBtn.addEventListener('click', function(){ setOpen(false); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') setOpen(false); });
+
+  /* ---------------- blob + canvas text ---------------- */
+  function build(){
+    w = window.innerWidth; h = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    s = Math.min(0.5, Math.sqrt(230000/(w*h)));
+    lo.width = Math.max(2, Math.round(w*s)); lo.height = Math.max(2, Math.round(h*s));
+    img = lctx.createImageData(lo.width, lo.height);
+    var Q = new URLSearchParams(location.search), ox = parseFloat(Q.get('ox')), oy = parseFloat(Q.get('oy')), orr = parseFloat(Q.get('r')) || 22;
+    var b = isNaN(ox) ? openBtn.getBoundingClientRect() : {left:ox-orr, top:oy-orr, width:orr*2, height:orr*2}, far = Math.hypot(w,h)*1.02;
+    circles = [
+      {x:b.left+b.width/2, y:b.top+b.height/2, s:0.05, r0:b.width/2*0.98},
+      {x:-w*0.02, y:h*0.36, s:0.10, r0:0}, {x:w*0.98, y:h*0.74, s:0.16, r0:0},
+      {x:w*1.00, y:h*0.10, s:0.22, r0:0}, {x:w*0.30, y:h*1.04, s:0.34, r0:0}, {x:w*0.78, y:h*1.02, s:0.36, r0:0}
+    ];
+    circles.forEach(function(c){ c.far = far; });
+    if (onRoot() && !live) measure();
+    render();
+  }
+
+  function render(){
+    var lw = lo.width, lh = lo.height, d = img.data, i, k;
+    var n = circles.length, cx = [], cy = [], rr = [];
+    for (k=0;k<n;k++){
+      var c = circles[k], t = clamp((u - c.s)/(1 - c.s),0,1);
+      cx[k]=c.x; cy[k]=c.y; rr[k]= c.r0 + (c.far - c.r0)*Math.pow(t,2.0);
+    }
+    var OX = 6, OY = 6, inv = 1/s, p = 0, K = 56;
+    function sdf(px,py){
+      var m = 1e9;
+      for (var j=0;j<n;j++){
+        if (rr[j] < 0.5) continue;
+        var dd = Math.sqrt((px-cx[j])*(px-cx[j]) + (py-cy[j])*(py-cy[j])) - rr[j];
+        if (m > 1e8){ m = dd; continue; }
+        var hh = Math.max(K - Math.abs(m - dd), 0)/K;
+        m = Math.min(m, dd) - hh*hh*K*0.25;
+      }
+      return m;
+    }
+    for (var y=0;y<lh;y++){
+      var py = (y+0.5)*inv;
+      for (var x=0;x<lw;x++){
+        var px = (x+0.5)*inv;
+        var a = clamp(0.5 - sdf(px,py)*s, 0, 1), sa = clamp(0.5 - sdf(px-OX,py-OY)*s, 0, 1)*0.8, oa = a + sa*(1-a);
+        if (oa <= 0.001){ d[p]=d[p+1]=d[p+2]=d[p+3]=0; }
+        else { var col = (4*a + 128*sa*(1-a))/oa; d[p]=d[p+1]=d[p+2]=col; d[p+3]=oa*255; }
+        p += 4;
+      }
+    }
+    lctx.putImageData(img,0,0);
+    ctx.clearRect(0,0,w,h);
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(lo,0,0,w,h);
+
+    if (T > 0 && !live && onRoot()){
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (i=0;i<items.length;i++){
+        var it = items[i], q = clamp((T - (150 + i*32))/900, 0, 1);
+        if (q <= 0) continue;
+        var g = 1 - easeOut(q), X = it.x - 95*g;
+        ctx.font = it.wt+' '+it.size+'px Montserrat, system-ui, sans-serif';
+        ctx.globalAlpha = 0.7*clamp(g*3,0,1); ctx.fillStyle = '#e6e6e6'; ctx.fillText(it.t, X + 7*g, it.y);
+        ctx.globalAlpha = clamp(q*4,0,1); ctx.fillStyle = it.c; ctx.fillText(it.t, X, it.y);
+      }
+      ctx.restore();
+    }
+  }
+
+  function tick(now){
+    var dt = Math.min(now-last, 50); last = now;
+    if (u < uT) u = Math.min(uT, u + dt/OPEN_MS); else if (u > uT) u = Math.max(uT, u - dt/CLOSE_MS);
+    if (T < TT) T = Math.min(TT, T + dt); else if (T > TT) T = Math.max(TT, T - dt*2.2);
+    if (isOpen && !live && u === 1 && T === TT && onRoot()) setLive(true);
+    render();
+    raf = (u !== uT || T !== TT) ? requestAnimationFrame(tick) : null;
+    if (!raf && !isOpen && u === 0 && wasOpen){ wasOpen = false; try{ parent.postMessage('profile:closed','*'); }catch(e){} }
+  }
+  function run(){ if (!raf){ last = performance.now(); raf = requestAnimationFrame(tick); } }
+
+  function setOpen(v){
+    if (v === isOpen) return;
+    isOpen = v; if (v) wasOpen = true;
+    document.body.classList.toggle('open', v);
+    openBtn.setAttribute('aria-expanded', String(v));
+    menu.inert = !v;
+    if (!v){
+      stack = []; cur = ROOT; setLive(false); renderView(false); T = Math.max(T, 1);
+    }
+    backBtn.classList.toggle('on', v && stack.length > 0);
+    uT = v ? 1 : 0; TT = v ? TEXT_MAX : 0;
+    run();
+  }
+  window.addEventListener('resize', build);
+  window.__seek = function(uu,tt){ u=uT=uu; T=TT=tt; render(); };
+
+  applyPhoto();
+  renderView(false);
+  build();
+  setTimeout(function(){ setOpen(true); }, 40);
+  if (document.fonts && document.fonts.load){
+    document.fonts.load('600 16px Montserrat').then(function(){ return document.fonts.load('700 22px Montserrat'); }).then(function(){ renderView(false); build(); });
+  }
+})();
+</script>
+</body>
+</html>
