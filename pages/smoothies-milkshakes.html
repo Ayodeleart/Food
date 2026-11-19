@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smoothies &amp; Milkshakes</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:max(var(--sat,0px),env(safe-area-inset-top,0px));
+  --g1:#f0c8a0; --g2:#c98f62; --g3:#96603c;
+  --card:#fbfbfb; --ink:#16181a; --muted:#8a8f94; --pill:#f0f1f2; --btn:#0b0b0b; --btn-ink:#fff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--card:#f4f5f5;color-scheme:dark}
+}
+:root[data-theme="dark"]{--card:#f4f5f5;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(120% 70% at 50% 35%,var(--g1),var(--g2) 62%,var(--g3));
+  font-family:-apple-system,"SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
+  color:var(--ink);overflow:hidden;-webkit-user-select:none;user-select:none;
+}
+.app{
+  --cw:min(54vw,calc(28vh - var(--ckh,0px)*.35),230px);      /* cup width */
+  --cardH:clamp(320px,42vh,390px);
+  --cardB:calc(28px + var(--ckh,0px) + env(safe-area-inset-bottom,0px)); /* gap under the card; --ckh = the shared checkout bar while it shows */
+  --lap:56px;                     /* how far the cup + shadow sink into the card */
+  position:relative;max-width:460px;height:100%;margin:0 auto;overflow:hidden;touch-action:pan-y;
+}
+.stage{
+  position:absolute;left:0;right:0;z-index:6;pointer-events:none;
+  bottom:calc(var(--cardB) + var(--cardH) - var(--lap));
+  height:calc(var(--cw)*1.6875);
+}
+.cup{
+  position:absolute;left:50%;top:0;width:var(--cw);margin-left:calc(var(--cw)/-2);
+  transform-origin:50% 0;will-change:transform,filter,opacity;cursor:pointer;pointer-events:auto;
+}
+.cup svg{display:block;width:100%;height:auto;overflow:visible}
+.card{
+  position:absolute;left:14%;right:14%;bottom:var(--cardB);height:var(--cardH);z-index:4;
+  background:var(--card);border-radius:28px;padding:calc(var(--lap) + 10px) 22px 20px;
+  box-shadow:0 18px 40px rgba(0,50,30,.22);display:flex;flex-direction:column;
+}
+.texts{position:relative;flex:1}
+.t{position:absolute;inset:0;will-change:transform,filter,opacity}
+.row{display:flex;justify-content:space-between;align-items:center}
+.price{font-weight:800;font-size:15px}
+.price small{font-size:12px;font-weight:700;margin-right:1px}
+.vol{font-size:12px;color:var(--muted);background:var(--pill);padding:6px 12px;border-radius:999px}
+.title{font-size:21px;line-height:1.14;font-weight:800;margin:12px 0 8px;letter-spacing:-.02em}
+.desc{font-size:12px;line-height:1.5;color:var(--muted);margin:0}
+.btn{
+  margin-top:12px;width:100%;border:0;border-radius:999px;background:var(--btn);color:var(--btn-ink);
+  font:700 15px inherit;font-family:inherit;padding:16px;cursor:pointer;transition:transform .35s cubic-bezier(.34,1.8,.5,1)
+}
+.btn:active{transform:scale(.94)}
+.back{
+  position:absolute;z-index:8;left:16px;top:14px;
+  width:42px;height:42px;border:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.14);transition:transform .35s cubic-bezier(.34,1.8,.5,1)
+}
+.back:active{transform:scale(.88)}
+.back svg{width:20px;height:20px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .35s cubic-bezier(.34,1.8,.5,1),background .25s}
+.btn.done{background:#12a566;animation:bump .45s cubic-bezier(.34,1.8,.5,1)}
+.btn svg{width:18px;height:18px}
+@keyframes bump{0%{transform:scale(.92)}100%{transform:scale(1)}}
+.cart{left:auto;right:16px}
+.badge{display:none;position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;
+  background:#fff;color:#16181a;font:800 11px/19px -apple-system,system-ui,sans-serif;place-items:center;text-align:center}
+.badge.pop{display:block;animation:pop .5s cubic-bezier(.34,1.8,.5,1)}
+@keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
+/* add-to-cart button: pill -> spinner circle -> green tick -> pill */
+.btn{height:52px;padding:0;position:relative;overflow:hidden;margin:12px auto 0;width:100%;
+  transition:width .45s cubic-bezier(.34,1.5,.5,1),background .25s,transform .35s cubic-bezier(.34,1.8,.5,1)}
+.btn #lbl{white-space:nowrap;transition:opacity .2s,transform .3s}
+.btn.busy,.btn.ok{width:52px}
+.btn.busy #lbl,.btn.ok #lbl{opacity:0;transform:scale(.6)}
+.btn .spin,.btn .tick{position:absolute;left:50%;top:50%;margin:-11px 0 0 -11px;width:22px;height:22px;opacity:0;pointer-events:none}
+.btn .spin{border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%}
+.btn.busy .spin{opacity:1;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.btn .tick{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:26;stroke-dashoffset:26}
+.btn.ok{background:#12a566;animation:ring .6s ease-out}
+.btn.ok .tick{opacity:1;animation:draw .35s .12s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(18,165,102,.55)}100%{box-shadow:0 0 0 16px rgba(18,165,102,0)}}
+/* your own cut-out pictures */
+.cup img{display:block;width:100%;height:calc(var(--cw)*1.6875);object-fit:contain;object-position:50% 100%;-webkit-user-drag:none;pointer-events:none}
+.cup .shd{position:absolute;left:6%;right:6%;bottom:-8px;height:16px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.28),transparent)}
+/* premium add-to-cart: green fill spreads from the tap point, label rolls up, tick draws, light sheen sweeps */
+.btn .fill{position:absolute;inset:0;background:linear-gradient(135deg,#19c27b,#0d985d);clip-path:circle(0% at var(--x,50%) var(--y,50%));transition:clip-path .7s cubic-bezier(.22,1,.36,1)}
+.btn.on .fill{clip-path:circle(160% at var(--x,50%) var(--y,50%))}
+.btn .lab{position:relative;z-index:1;display:block;height:22px;min-width:150px;line-height:22px}
+.btn .l1,.btn .l2{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .4s,filter .4s}
+.btn .l2{transform:translateY(140%);opacity:0;filter:blur(5px)}
+.btn.on .l1{transform:translateY(-140%);opacity:0;filter:blur(5px)}
+.btn.on .l2{transform:none;opacity:1;filter:none;transition-delay:.12s}
+.btn .chk{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;width:18px;height:18px}
+.btn .chk path{stroke-dasharray:26;stroke-dashoffset:26;transition:stroke-dashoffset .4s ease-out}
+.btn.on .chk path{stroke-dashoffset:0;transition-delay:.35s}
+.btn::after{content:"";position:absolute;z-index:2;top:0;bottom:0;left:-70%;width:55%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-18deg);opacity:0;pointer-events:none}
+.btn.on::after{opacity:1;animation:sheen .9s .15s ease-out forwards}
+@keyframes sheen{to{left:130%}}
+.btn{transition:transform .35s cubic-bezier(.34,1.8,.5,1),box-shadow .5s}
+.btn.on{box-shadow:0 12px 30px rgba(18,165,102,.45)}
+.stage,.card{transition:bottom .5s ease}
+.btn:disabled{opacity:.55;cursor:default}
+.btn:disabled:active{transform:none}
+.empty{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;padding:24px;color:#fff;font-size:16px;font-weight:600;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.empty small{font-weight:400;opacity:.85}
+.empty[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top"><button class="back round" id="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <div class="empty" id="empty" hidden></div>
+  <div class="stage" id="stage"></div>
+  <div class="card">
+    <div class="texts" id="texts"></div>
+    <button class="btn" id="get"><i class="fill"></i><span class="lab"><span class="l1">Add to cart</span><span class="l2"><svg class="chk" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Added to cart</span></span></button>
+  </div>
+</div>
+
+<script src="../checkout.js"></script>
+<script>
+/* Products come from the admin (Menu items > Smoothies & Milkshakes): name, price, picture, description, Sold out.
+   The background colours come from the picture itself; until it is read (or if it can't be) a palette by name is used. */
+const SB="https://fubhpawdzzjutsfzyzhz.supabase.co", SBK="sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm";
+const P_CHOC=["#f0c8a0","#c98f62","#96603c"], P_PINK=["#ffa6c6","#e0709f","#b04477"], P_GREEN=["#c4e85a","#8ac636","#5a9a25"],
+      P_YELLOW=["#fff0a0","#f5c93c","#c9962a"], P_PURPLE=["#d9b8ff","#a878e0","#7446b0"], P_COFFEE=["#e8d2b8","#b98a5e","#7d5535"];
+function palFor(name,i){
+ const n=String(name||"").toLowerCase();
+ if(/choc|cocoa|oreo|cookie|brownie/.test(n))return P_CHOC;
+ if(/coffee|mocha|latte|caramel|frappe/.test(n))return P_COFFEE;
+ if(/straw|berry|cherry|rasp|pink/.test(n)&&!/blue/.test(n))return P_PINK;
+ if(/kiwi|lime|mint|matcha|avocado|green|star/.test(n))return P_GREEN;
+ if(/mango|banana|pine|vanilla|lemon|passion|orange|peach/.test(n))return P_YELLOW;
+ if(/blue|grape|taro|ube|purple/.test(n))return P_PURPLE;
+ return [P_CHOC,P_PINK,P_GREEN,P_YELLOW,P_PURPLE][i%5];
+}
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let ITEMS=[];
+async function loadItems(){
+ const cat=new URLSearchParams(location.search).get("cat")||"smoothies-milkshakes";
+ try{
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);
+  const r=await fetch(SB+"/rest/v1/menu_items?select=*&category_id=eq."+encodeURIComponent(cat)+"&order=created_at.asc",
+   {headers:{apikey:SBK,Authorization:"Bearer "+SBK},signal:c.signal});
+  clearTimeout(t);
+  const rows=r.ok?await r.json():[];
+  ITEMS=rows.map((x,i)=>{const bg=palFor(x.name,i);
+   return {id:x.id,name:x.name,p:Number(x.price)||0,price:(Number(x.price)||0).toLocaleString("en-NG"),img:x.image_url||null,sold:x.available===false,
+    desc:x.description||x.details||"",bg,top:bg[1],bot:bg[0],cream:"#fff6f2",drizzle:bg[2]};});
+ }catch(e){ITEMS=[];}
+}
+// read the main colour of a picture and turn it into the three background tones
+function tonesOf(src,cb){
+ const im=new Image();im.crossOrigin="anonymous";
+ im.onload=()=>{try{
+  const W=28,cv=document.createElement("canvas");cv.width=cv.height=W;const x=cv.getContext("2d",{willReadFrequently:true});
+  x.drawImage(im,0,0,W,W);const d=x.getImageData(0,0,W,W).data;let R=0,G=0,B=0,w=0;
+  for(let k=0;k<d.length;k+=4){if(d[k+3]<200)continue;const mx=Math.max(d[k],d[k+1],d[k+2]),mn=Math.min(d[k],d[k+1],d[k+2]),sat=(mx-mn)+20;R+=d[k]*sat;G+=d[k+1]*sat;B+=d[k+2]*sat;w+=sat}
+  if(!w)return;R/=w*255;G/=w*255;B/=w*255;
+  const mx=Math.max(R,G,B),mn=Math.min(R,G,B),l=(mx+mn)/2,e=mx-mn;let h=0,s=0;
+  if(e){s=e/(1-Math.abs(2*l-1));h=mx===R?((G-B)/e)%6:mx===G?(B-R)/e+2:(R-G)/e+4;h=(h*60+360)%360}
+  const S=Math.max(.45,Math.min(.8,s));
+  const hx=(L)=>{const c=(1-Math.abs(2*L-1))*S,xx=c*(1-Math.abs((h/60)%2-1)),m=L-c/2;let r=0,g=0,b=0;
+   if(h<60)[r,g,b]=[c,xx,0];else if(h<120)[r,g,b]=[xx,c,0];else if(h<180)[r,g,b]=[0,c,xx];else if(h<240)[r,g,b]=[0,xx,c];else if(h<300)[r,g,b]=[xx,0,c];else[r,g,b]=[c,0,xx];
+   return "#"+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("")};
+  cb([hx(.80),hx(.62),hx(.42)]);
+ }catch(e){}};
+ im.src=src;
+}
+
+function cupSVG(c,id){
+ return `<svg viewBox="0 0 160 270" aria-hidden="true">
+ <defs>
+  <linearGradient id="g${id}" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="${c.top}"/><stop offset=".58" stop-color="${c.top}"/><stop offset=".62" stop-color="${c.bot}"/><stop offset="1" stop-color="${c.bot}"/></linearGradient>
+  <linearGradient id="s${id}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".3" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
+  <radialGradient id="sh${id}"><stop offset="0" stop-color="#000" stop-opacity=".26"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+ </defs>
+ <ellipse cx="80" cy="258" rx="74" ry="12" fill="url(#sh${id})"/>
+ <rect x="76" y="0" width="7" height="90" rx="3" fill="#1c9b62"/>
+ <path d="M18 112 L142 112 L124 238 Q122 250 110 250 L50 250 Q38 250 36 238 Z" fill="url(#g${id})"/>
+ <path d="M18 112 L142 112 L124 238 Q122 250 110 250 L50 250 Q38 250 36 238 Z" fill="url(#s${id})"/>
+ <path d="M16 116 Q18 78 52 74 Q60 52 82 56 Q106 52 112 74 Q146 80 146 116 Q80 130 16 116Z" fill="${c.cream}"/>
+ <path d="M30 100 Q50 88 62 100 T96 98 T130 100 M44 84 Q62 74 80 84 T118 84" fill="none" stroke="${c.drizzle}" stroke-width="5" stroke-linecap="round"/>
+ <circle cx="80" cy="176" r="27" fill="#12684a"/><circle cx="80" cy="176" r="21" fill="none" stroke="#fff" stroke-width="2"/>
+ <path d="M80 164 q10 2 10 12 q-4 8 -10 10 q-6 -2 -10 -10 q0 -10 10 -12Z" fill="#fff"/>
+</svg>`;
+}
+
+function boot(){
+const stage=document.getElementById("stage"), texts=document.getElementById("texts"), app=document.getElementById("app");
+const cups=[], blocks=[];
+const N=ITEMS.length;
+// wrap an index distance into (-N/2, N/2] so the carousel loops and both neighbours are always there
+const wrap=d=>d-N*Math.round(d/N);
+
+ITEMS.forEach((c,i)=>{
+ const d=document.createElement("div");d.className="cup";d.innerHTML=c.img?`<img src="${c.img}" alt="${esc(c.name)}" draggable="false"><i class="shd"></i>`:cupSVG(c,i);
+ d.addEventListener("click",()=>{if(!moved)go(Math.round(pos+wrap(i-pos)))});
+ stage.appendChild(d);cups.push(d);
+ const t=document.createElement("div");t.className="t";
+ t.innerHTML=`<div class="row"><div class="price"><small>₦</small>${c.price}</div>${c.sold?'<div class="vol">Sold out</div>':""}</div>
+  <div class="title">${esc(c.name)}</div><p class="desc">${esc(c.desc)}</p>`;
+ texts.appendChild(t);blocks.push(t);
+});
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const root=document.documentElement;
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const BG=ITEMS.map(it=>it.bg.map(hex));
+// blend the background between the two products the carousel is currently between
+function paintBg(){
+ const b=Math.floor(pos), f=pos-b;
+ const A=BG[((b%N)+N)%N], B=BG[(((b+1)%N)+N)%N];
+ for(let k=0;k<3;k++){
+  const rgb=A[k].map((v,j)=>Math.round(v+(B[k][j]-v)*f));
+  root.style.setProperty("--g"+(k+1),`rgb(${rgb})`);
+ }
+}
+/* inside the app the parent closes the page from this button; opened on its own it goes back */
+document.getElementById("back").addEventListener("click",e=>{e.stopPropagation();if(window.parent===window&&history.length>1)history.back()});
+document.getElementById("back").addEventListener("pointerdown",e=>e.stopPropagation());
+let pos=0, vel=0, target=0, dragging=false, running=false, last=0, moved=false;
+const spacing=()=>app.clientWidth*.44;
+
+function render(){
+ const S=spacing();
+ paintBg();
+ const idx=Math.round(pos);if(idx!==lastIdx){lastIdx=idx;haptic("tick");syncBtn()}
+ cups.forEach((el,i)=>{
+  const d=wrap(i-pos), a=Math.abs(d), n=Math.min(a,1);
+  const s=1-.42*n, blur=n*3.5, op=1-.12*n-Math.max(0,a-1)*.8;
+  el.style.transform=`translateX(${d*S}px) translateY(${n*40}px) scale(${s}) rotate(${d*3}deg)`;
+  el.style.filter=blur>.05?`blur(${blur.toFixed(2)}px)`:"none";
+  el.style.opacity=clamp(op,0,1);
+  el.style.zIndex=100-Math.round(a*10);
+ });
+ blocks.forEach((el,i)=>{
+  const d=wrap(i-pos), a=Math.abs(d), o=clamp(1-a*1.7,0,1);
+  el.style.opacity=o;
+  el.style.filter=a>.02?`blur(${Math.min(a*6,6).toFixed(2)}px)`:"none";
+  el.style.transform=`translateX(${d*36}px)`;
+ });
+}
+
+function tick(t){
+ const dt=Math.min(.032,(t-last)/1000||.016);last=t;
+ if(!dragging){
+  const k=170, c=11;            // lower damping = bouncier
+  vel+=(-k*(pos-target)-c*vel)*dt;
+  pos+=vel*dt;
+  if(Math.abs(vel)<.0008&&Math.abs(pos-target)<.0008){pos=target;vel=0;render();running=false;return}
+ }
+ render();requestAnimationFrame(tick);
+}
+function start(){if(!running){running=true;last=performance.now();requestAnimationFrame(tick)}}
+function go(i){target=i;vel+=(target-pos)*2;start()}
+
+let x0=0,p0=0,lx=0,lt=0,v=0;
+app.addEventListener("pointerdown",e=>{
+ dragging=true;moved=false;x0=lx=e.clientX;p0=pos;lt=performance.now();v=0;vel=0;
+ app.setPointerCapture(e.pointerId);start();
+});
+app.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+ const dx=e.clientX-x0;if(Math.abs(dx)>6)moved=true;
+ const now=performance.now(),dtm=Math.max(1,now-lt);
+ v=.6*v+.4*(-(e.clientX-lx)/spacing()/(dtm/1000));lx=e.clientX;lt=now;
+ pos=p0-dx/spacing();
+});
+function release(){
+ if(!dragging)return;dragging=false;
+ target=Math.round(pos+v*.16);vel=clamp(v,-6,6);start();
+ setTimeout(()=>moved=false,0);
+}
+app.addEventListener("pointerup",release);
+app.addEventListener("pointercancel",release);
+addEventListener("keydown",e=>{
+ if(e.key==="ArrowRight")go(target+1);
+ if(e.key==="ArrowLeft")go(target-1);
+});
+const getBtn=document.getElementById("get"), l1=getBtn.querySelector(".l1");
+const cur=()=>((Math.round(pos)%N)+N)%N;
+function syncBtn(){const c=ITEMS[cur()];l1.textContent=c.sold?"Sold out":"Add to cart";getBtn.disabled=!!c.sold}
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+let tm;
+[getBtn].forEach(b=>b.addEventListener("pointerdown",e=>e.stopPropagation()));
+// Haptics: Android uses vibrate(); iPhone Safari (iOS 17.4+) ticks when a hidden switch input is toggled from a tap
+const hapLabel=document.createElement("label");
+hapLabel.setAttribute("aria-hidden","true");
+hapLabel.style.cssText="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none";
+hapLabel.innerHTML='<input type="checkbox" switch tabindex="-1">';
+document.body.appendChild(hapLabel);
+let lastHap=0, lastIdx=0;
+function haptic(kind){
+ const now=performance.now();if(now-lastHap<40)return;lastHap=now;
+ try{if(navigator.vibrate)navigator.vibrate(kind==="success"?[14,40,22]:kind==="tick"?8:16)}catch(_){}
+ try{hapLabel.click()}catch(_){}
+}
+let busy=false;
+getBtn.addEventListener("click",e=>{
+ if(busy||ITEMS[cur()].sold)return;busy=true;
+ const r=getBtn.getBoundingClientRect();
+ const kb=e.detail===0;
+ getBtn.style.setProperty("--x",kb?"50%":(e.clientX-r.left)+"px");
+ getBtn.style.setProperty("--y",kb?"50%":(e.clientY-r.top)+"px");
+ haptic("tap");
+ getBtn.classList.add("on");
+ /* the shared checkout: one cart for the whole app (flying dot, bar, slide-up cart) */
+ const c=ITEMS[cur()];Checkout.add({key:"sm:"+(c.id||c.name),n:c.name,p:c.p,img:c.img||""},1,getBtn);
+ setTimeout(()=>haptic("success"),180);
+ setTimeout(()=>{
+  getBtn.style.setProperty("--x","50%");getBtn.style.setProperty("--y","50%");
+  getBtn.classList.remove("on");
+  setTimeout(()=>{busy=false},600);
+ },1700);
+});
+addEventListener("resize",render);
+render();syncBtn();
+// colours from each picture
+ITEMS.forEach((c,i)=>{if(c.img)tonesOf(c.img,t=>{BG[i]=t.map(hex);render()})});
+
+}
+Checkout.init();
+loadItems().then(()=>{
+ if(!ITEMS.length){const e=document.getElementById("empty");e.innerHTML="No drinks yet.<br><small>Add them in the admin under Menu items.</small>";e.hidden=false;document.querySelector(".card").hidden=true;return}
+ boot();
+});
+</script>
+</body>
+</html>
