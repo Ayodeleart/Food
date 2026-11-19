@@ -305,9 +305,11 @@
       const c = new AbortController(), t = setTimeout(() => c.abort(), 5000);
       const r = await fetch(SB + "/rest/v1/menu_items?select=*&category_id=eq." + encodeURIComponent(cat) + "&order=created_at.asc",
         { headers: { apikey: SBK, Authorization: "Bearer " + SBK }, signal: c.signal });
+      const fr = await fetch(SB + "/rest/v1/menu_images?select=key,image_url&key=like.fruit/items/*", { headers: { apikey: SBK, Authorization: "Bearer " + SBK }, signal: c.signal }).catch(() => null);
       clearTimeout(t);
-      const rows = r.ok ? await r.json() : [];
-      CONFIG.juices = rows.map(x => Object.assign({}, themeFor(x.name, x.fruit), {
+      const rows = r.ok ? await r.json() : [], fm = {};
+      try { (fr && fr.ok ? await fr.json() : []).forEach(m => { fm[m.key.split("/")[2]] = m.image_url; }); } catch (e) {}
+      CONFIG.juices = rows.map(x => Object.assign({}, themeFor(x.name, fm[x.id]), {
         id: x.id, name: x.name, tab: String(x.name || "").split(/\s+/)[0], price: Number(x.price) || 0,
         image: x.image_url || null, sold: x.available === false }));
     } catch (e) { CONFIG.juices = []; }

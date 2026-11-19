@@ -62,7 +62,6 @@ label.chk.sm input{width:18px;height:18px;margin:0}
 .frw{display:flex;flex:1 1 100%;align-items:center;gap:10px;font-size:14px;color:var(--mut)}
 .frw span{flex:none}
 .frw select{flex:1;min-width:0}
-.note pre{margin:8px 0;padding:10px;background:#fff;border:1px solid #F3D3B8;border-radius:8px;white-space:pre-wrap;word-break:break-all;font-size:13px;-webkit-user-select:all;user-select:all}
 </style>
 </head>
 <body>
@@ -267,7 +266,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   function usd(n) { return '\u20A6' + (Number(n) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function menu() {
     var opts = MENU_CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === menuCat ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('');
-    view.innerHTML = '<h2>Menu items</h2><select id="mcat">' + opts + '</select><label class="chk sm"><input type="checkbox" data-cut="items"' + (wantCut('items') ? ' checked' : '') + '> Remove background from item pictures (untick for 3D)</label><div id="frnote"></div><div id="mlist" class="card muted">Loading…</div>' +
+    view.innerHTML = '<h2>Menu items</h2><select id="mcat">' + opts + '</select><label class="chk sm"><input type="checkbox" data-cut="items"' + (wantCut('items') ? ' checked' : '') + '> Remove background from item pictures (untick for 3D)</label><div id="mlist" class="card muted">Loading…</div>' +
       '<div class="card"><b>Add an item</b><p class="muted" style="margin:4px 0 0">Pick the picture and fill in the details in any order, then tap Add item once.</p>' +
       '<div class="nf"><button type="button" class="pickb" id="apick">+ Picture</button><div class="nfields"><input class="in" id="an" placeholder="Item name"><input class="in" id="ap" inputmode="decimal" placeholder="Price"></div></div>' +
       '<input class="in" id="ad" placeholder="Short description, e.g. Rice, chicken, plantain">' +
@@ -280,33 +279,28 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
   /* Fruit shown on the Fresh Juices page. Saved in menu_items.fruit (needs the one-time SQL below). */
   var FRUITS = [['', 'Auto (from the name)'], ['orange', 'Orange'], ['apple', 'Apple'], ['kiwi', 'Kiwi'], ['pineapple', 'Pineapple'], ['watermelon', 'Watermelon'], ['none', 'No fruit']];
-  var FRUIT_SQL = "alter table public.menu_items add column if not exists fruit text;\nnotify pgrst, 'reload schema';";
-  var fruitCol = null;   /* null = not checked yet, true / false = column exists or not */
   function isJuice() { return menuCat === 'fresh-juices'; }
   function fruitSelect(cls, val) {
     return '<select class="in ' + cls + '"' + (cls === 'af' ? ' id="af"' : '') + '>' + FRUITS.map(function (f) { return '<option value="' + f[0] + '"' + (f[0] === (val || '') ? ' selected' : '') + '>' + esc(f[1]) + '</option>'; }).join('') + '</select>';
   }
+  /* The fruit for a juice is kept beside the pictures (menu_images, key fruit/items/<id>), so no database change is needed. */
+  function setFruit(id, val) {
+    if (val === undefined) return Promise.resolve();
+    if (!val) return rest('menu_images?key=eq.' + encodeURIComponent('fruit/items/' + id), { method: 'DELETE' });
+    return rest('menu_images?on_conflict=key', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: [{ key: 'fruit/items/' + id, image_url: val, updated_at: new Date().toISOString() }] });
+  }
   function fruitUI() {
-    var slot = document.getElementById('afrs'), note = document.getElementById('frnote');
-    if (!slot || !note) return Promise.resolve();
-    if (!isJuice()) { slot.innerHTML = ''; note.innerHTML = ''; return Promise.resolve(); }
-    var chk = fruitCol === null ? rest('menu_items?select=fruit&limit=1').then(function () { fruitCol = true; }, function () { fruitCol = false; }) : Promise.resolve();
-    return chk.then(function () {
-      if (fruitCol) { note.innerHTML = ''; slot.innerHTML = '<div class="frw" style="margin-top:8px"><span>Fruit on the page</span>' + fruitSelect('af', '') + '</div>'; }
-      else {
-        slot.innerHTML = '';
-        note.innerHTML = '<div class="note">Choosing the fruit needs one database change, once. In Supabase open <b>SQL Editor</b>, paste this, run it, then reload this page:<pre id="frsql">' + esc(FRUIT_SQL) + '</pre><button class="b ghost" id="frcopy">Copy</button></div>';
-      }
-    });
+    var slot = document.getElementById('afrs');
+    if (slot) slot.innerHTML = isJuice() ? '<div class="frw" style="margin-top:8px"><span>Fruit on the page</span>' + fruitSelect('af', '') + '</div>' : '';
+    return Promise.resolve();
   }
   function newItemBody(name, price, desc, det) {
-    var o = { category_id: menuCat, category_name: catLabel(), name: name, price: price, description: desc || null, details: det || null, available: true }, f = document.getElementById('af');
-    if (f) o.fruit = f.value || null;
+    var o = { category_id: menuCat, category_name: catLabel(), name: name, price: price, description: desc || null, details: det || null, available: true };
     return o;
   }
   function rowBody(row, n, p) {
-    var o = { name: n, price: p, description: row.querySelector('.d').value.trim() || null, details: row.querySelector('.x').value.trim() || null, available: row.querySelector('.av').checked }, f = row.querySelector('.fr');
-    if (f) o.fruit = f.value || null;
+    var o = { name: n, price: p, description: row.querySelector('.d').value.trim() || null, details: row.querySelector('.x').value.trim() || null, available: row.querySelector('.av').checked };
     return o;
   }
   var addFile = null, addPrev = '';
@@ -323,21 +317,23 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   function addItem() {
     var name = document.getElementById('an').value.trim(), price = parseFloat(document.getElementById('ap').value), desc = document.getElementById('ad').value.trim(), det = document.getElementById('ax').value.trim(), file = addFile, made = false, btn = document.getElementById('aadd');
     if (!name || isNaN(price)) return toast('Enter a name and a price', true);
-    var cut = wantCut('items'); btn.disabled = true;
+    var cut = wantCut('items'), af = document.getElementById('af'), fval = af ? af.value : undefined; btn.disabled = true;
     busy(file ? 'Preparing picture…' : 'Saving item…');
     (file ? prepared(file, 1200, cut, cut) : Promise.resolve(null)).then(function (p) {
       busy('Saving item…');
-      return rest('menu_items', { method: 'POST', headers: { Prefer: 'return=representation' }, body: [newItemBody(name, price, desc, det)] }).then(function (rows) { made = true; return { p: p, id: rows[0].id }; });
+      return rest('menu_items', { method: 'POST', headers: { Prefer: 'return=representation' }, body: [newItemBody(name, price, desc, det)] }).then(function (rows) { made = true; return setFruit(rows[0].id, fval).then(function () { return { p: p, id: rows[0].id }; }); });
     }).then(function (o) {
       if (!o.p) return;
       busy('Uploading picture…');
       return putPrepared('items/' + o.id, o.p).then(function (url) { return rest('menu_items?id=eq.' + o.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { image_url: url } }); });
     }).then(function () { busy(); btn.disabled = false; toast('Item added'); resetAdd(); loadItems(); })
-      .catch(function (e) { busy(); btn.disabled = false; if (made) { toast('Item saved, but the picture failed: ' + e.message + ' Use Add pic on the item.', true); resetAdd(); loadItems(); } else toast(e.message, true); });
+      .catch(function (e) { busy(); btn.disabled = false; if (made) { toast('Item saved, but this failed: ' + e.message + ' Open the item and try again.', true); resetAdd(); loadItems(); } else toast(e.message, true); });
   }
   function loadItems() {
     var box = document.getElementById('mlist');
-    rest('menu_items?select=*&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc').then(function (rows) {
+    Promise.all([rest('menu_items?select=*&category_id=eq.' + encodeURIComponent(menuCat) + '&order=created_at.asc'),
+      isJuice() ? rest('menu_images?select=key,image_url&key=like.fruit/items/*').catch(function () { return []; }) : Promise.resolve([])]).then(function (res) {
+      var rows = res[0], fm = {}; res[1].forEach(function (m) { fm[m.key.split('/')[2]] = m.image_url; });
       if (!box) return;
       box.className = 'card';
       box.innerHTML = rows.length ? rows.map(function (r) {
@@ -345,7 +341,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
           '<input class="in n" value="' + esc(r.name) + '"><input class="in p" inputmode="decimal" value="' + Number(r.price).toFixed(2) + '">' +
           '<input class="in d" placeholder="Short description, e.g. Rice, chicken, plantain" value="' + esc(r.description || '') + '">' +
           '<textarea class="in x" rows="3" placeholder="Details shown on the product page, e.g. ingredients, size, what is inside">' + esc(r.details || '') + '</textarea>' +
-          (fruitCol && isJuice() ? '<div class="frw"><span>Fruit on the page</span>' + fruitSelect('fr', r.fruit) + '</div>' : '') +
+          (isJuice() ? '<div class="frw"><span>Fruit on the page</span>' + fruitSelect('fr', fm[r.id]) + '</div>' : '') +
           '<label class="chk sm" style="margin:0"><input type="checkbox" class="av"' + (r.available === false ? '' : ' checked') + '> Available</label>' +
           (isDrinkCat() && r.image_url ? '<button class="b ghost" data-m3d>Make 3D</button><span class="muted" data-mst></span>' : '') + '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
           (r.image_url ? '<button class="b ghost" data-ipicrm>Clear pic</button>' : '') + '<button class="b ghost" data-del>Delete</button></div>';
@@ -438,12 +434,9 @@ label.chk.sm input{width:18px;height:18px;margin:0}
     if (b.hasAttribute('data-save') && id) {
       var n = row.querySelector('.n').value.trim(), p = parseFloat(row.querySelector('.p').value);
       if (!n || isNaN(p)) return toast('Enter a name and a price', true);
-      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: rowBody(row, n, p) }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
+      rest('menu_items?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: rowBody(row, n, p) }).then(function () { var fs = row.querySelector('.fr'); return setFruit(id, fs ? fs.value : undefined); }).then(function () { toast('Saved'); }).catch(function (x) { toast(x.message, true); });
     } else if (b.hasAttribute('data-del') && id) {
-      if (confirm('Delete this item?')) rest('menu_items?id=eq.' + id, { method: 'DELETE' }).then(function () { toast('Deleted'); loadItems(); }).catch(function (x) { toast(x.message, true); });
-    } else if (b.id === 'frcopy') {
-      var sql = document.getElementById('frsql').textContent;
-      (navigator.clipboard ? navigator.clipboard.writeText(sql) : Promise.reject()).then(function () { toast('Copied'); }, function () { toast('Press and hold the code to copy it', true); });
+      if (confirm('Delete this item?')) rest('menu_items?id=eq.' + id, { method: 'DELETE' }).then(function () { if (isJuice()) rest('menu_images?key=eq.' + encodeURIComponent('fruit/items/' + id), { method: 'DELETE' }).catch(function () {}); toast('Deleted'); loadItems(); }).catch(function (x) { toast(x.message, true); });
     } else if (b.id === 'aadd') {
       addItem();
     } else if (b.id === 'apick') {
