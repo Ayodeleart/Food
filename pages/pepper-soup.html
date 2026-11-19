@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Pepper Soup</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#3d7158;--lime:#8dc63f;--ink:#1f3b25;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);overscroll-behavior:none}
+body{font-family:'Manrope',system-ui,-apple-system,sans-serif}
+#stage{position:fixed;inset:0;background:var(--bg);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#pattern{position:absolute;inset:0;opacity:.09;background-size:170px 170px}
+/* 720x1280 artboard, scaled to fit and centered; overflow visible so plates bleed off the edges */
+#art{position:absolute;left:50%;top:50%;width:720px;height:1280px;transform-origin:center center}
+
+#back{position:fixed;z-index:20;left:16px;top:calc(var(--sat,env(safe-area-inset-top,0px)) + 14px);width:46px;height:46px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+#back:active{background:rgba(255,255,255,.28)}
+#back svg{width:22px;height:22px}
+
+
+#add{position:fixed;z-index:20;left:50%;transform:translateX(-50%);bottom:calc(var(--ckh,0px) + env(safe-area-inset-bottom,0px) + 26px);
+  height:48px;padding:0 24px;border:0;border-radius:24px;background:var(--lime);color:var(--ink);
+  font:700 16px/1 'Manrope',system-ui,sans-serif;display:flex;align-items:center;gap:9px;cursor:pointer;white-space:nowrap;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);transition:transform .15s ease,background .2s ease}
+#add:active{transform:translateX(-50%) scale(.96)}
+#add svg{width:20px;height:20px}
+#add.done{background:#fff}
+
+#card{position:absolute;left:78px;top:170px;width:378px;height:320px;background:var(--lime);
+  border-radius:20px 120px 20px 120px;z-index:1;
+  clip-path:inset(0 100% 0 0);transition:clip-path .55s cubic-bezier(.65,0,.35,1)}
+#card.on{clip-path:inset(0 0 0 0)}
+#card.off{clip-path:inset(0 0 0 100%)}
+#info{position:absolute;left:46px;top:44px;right:40px;color:var(--ink)}
+#info>*{opacity:0;transform:translateY(14px);transition:opacity .4s ease,transform .4s ease}
+#info>.in{opacity:1;transform:none}
+#info .name{font-weight:800;font-size:34px;line-height:1.1;letter-spacing:-.4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#info .price{font-weight:800;font-size:30px;margin-top:10px;line-height:1.1}
+#info .details{font-weight:500;font-size:19px;line-height:1.35;margin-top:10px;opacity:.85;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#info>.details.in{opacity:.85}
+
+.plate{position:absolute;z-index:2;border-radius:50%;will-change:transform,opacity;left:0;top:0;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,.28));pointer-events:none}
+.plate svg{width:100%;height:100%;display:block;border-radius:50%}
+.plate img{width:100%;height:100%;display:block;object-fit:contain}
+#empty{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font:700 22px/1.3 'Manrope',system-ui,sans-serif;padding:40px}
+</style>
+</head>
+<body>
+<button id="back" aria-label="Back">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l-8 8 8 8"/></svg>
+</button>
+<button id="add" aria-label="Add to cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.1a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>
+  <span>Add to cart</span>
+</button>
+<label id="hap" aria-hidden="true" style="position:fixed;left:-99px;top:-99px;opacity:0;pointer-events:none"><input type="checkbox" switch tabindex="-1"></label>
+<div id="empty">No pepper soup yet.<br>Check back soon.</div>
+<div id="stage">
+  <div id="pattern"></div>
+  <div id="art">
+    <div id="card"><div id="info"></div></div>
+    <div id="plates"></div>
+  </div>
+</div>
+
+<script src="../checkout.js"></script>
+<script>
+/* ---------- DATA ----------
+   Each food: { name, price, details, img }
+   img = a square picture with the background removed (transparent PNG/WebP URL or data URI).
+   The six plates below are embedded; without img a placeholder plate is drawn.
+   Load your own list with:  Menu.setFoods([...])                                   */
+const CURRENCY='\u20A6';
+let ITEMS=[];
+let N=0;
+
+const $=s=>document.querySelector(s);
+const art=$('#art'), stage=$('#stage');
+function fit(){
+  const s=Math.min(innerWidth/720,innerHeight/1280);
+  art.style.transform='translate(-50%,-50%) scale('+s+')';
+}
+addEventListener('resize',fit);fit();
+const scale=()=>parseFloat(art.style.transform.split('scale(')[1])||1;
+
+(function(){
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170' viewBox='0 0 170 170' fill='none' stroke='#b6e36a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'>
+  <g transform='rotate(-25 40 40)'><ellipse cx='40' cy='40' rx='9' ry='20'/><path d='M40 24v32'/></g>
+  <g transform='rotate(35 125 45)'><path d='M115 35c0-10 20-10 20 0v22c0 8-20 8-20 0z'/></g>
+  <g transform='rotate(-60 50 125)'><circle cx='50' cy='125' r='14'/><circle cx='50' cy='125' r='7'/></g></svg>`;
+  $('#pattern').style.backgroundImage='url("data:image/svg+xml;utf8,'+encodeURIComponent(svg)+'")';
+})();
+
+function plateEl(it){
+  const el=document.createElement('div');el.className='plate';
+  if(it.img){el.innerHTML='<img src="'+it.img+'" alt="" draggable="false">';return el}
+  let b='';
+  (it.blobs||[]).forEach(([x,y,r,c])=>{b+=`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x-r*.25}" cy="${y-r*.25}" r="${r*.45}" fill="#fff" opacity=".12"/>`});
+  el.innerHTML=`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#ece8e0"/><circle cx="50" cy="50" r="47" fill="#f7f5f0"/><circle cx="50" cy="50" r="40" fill="#f1eee7" stroke="#ddd8cc" stroke-width="1"/>${b}</svg>`;
+  return el;
+}
+
+/* ---- circular carousel: plates ride a ring ----
+   top = current, left = next, right = previous. Advancing turns the ring clockwise.
+   Only these three positions are visible; plates fade out as they pass the bottom. */
+const CX=385, CY=1060, R=366, D=430;
+let els=[];
+const wrap=v=>N<3?v:(((v+1.5)%N+N)%N-1.5);
+function render(p){
+  els.forEach((e,k)=>{
+    const r=wrap(k-p);
+    const th=(-90-r*90)*Math.PI/180;
+    const x=CX+R*Math.cos(th)-D/2, y=CY+R*Math.sin(th)-D/2;
+    const rot=30*Math.sin(2*Math.PI*r);
+    const a=Math.abs(r);
+    e.style.opacity=a<=1?1:Math.max(0,1-(a-1)/0.4);
+    e.style.transform='translate('+x+'px,'+y+'px) rotate('+rot+'deg)';
+  });
+}
+
+/* ---- card: name, price, details ---- */
+const card=$('#card'), info=$('#info');
+let tok=0, shown=-1;
+const money=v=>typeof v==='number'?CURRENCY+v.toLocaleString():(v==null?'':String(v));
+function hideCard(){
+  if(shown===-1)return;
+  shown=-1;tok++;
+  card.classList.remove('on');card.classList.add('off');
+}
+function showCard(i){
+  if(shown===i)return;
+  shown=i;const t=++tok;
+  setTimeout(()=>{
+    if(t!==tok)return;
+    const it=ITEMS[i];
+    info.innerHTML='';
+    [['name',it.name],['price',money(it.price)],['details',it.details]].forEach(([c,v])=>{
+      if(!v)return;
+      const d=document.createElement('div');d.className=c;d.textContent=v;info.appendChild(d);
+    });
+    card.className='';void card.offsetWidth;card.classList.add('on');
+    [...info.children].forEach((d,j)=>setTimeout(()=>{if(t===tok)d.classList.add('in')},380+j*180));
+  },card.classList.contains('off')?380:0);
+}
+
+/* ---- motion loop ---- */
+let p=0, target=0, dragging=false;
+function tick(){
+  if(!dragging)p+=(target-p)*0.14;
+  if(!dragging&&Math.abs(target-p)<0.002)p=target;
+  render(p);
+  if(!dragging&&p===target&&N)showCard(((target%N)+N)%N);else hideCard();
+  requestAnimationFrame(tick);
+}
+
+function setFoods(list){
+  ITEMS=list||[];N=ITEMS.length;
+  $('#plates').innerHTML='';
+  els=ITEMS.map(plateEl);
+  els.forEach(e=>{e.style.width=e.style.height=D+'px';$('#plates').appendChild(e)});
+  p=0;target=0;hideCard();
+}
+setFoods(ITEMS);
+
+/* ---- swipe: drag along the ring. Right = next (clockwise), left = previous ---- */
+const PX=430;
+let sx=0,sy=0,t0=0,base=0,lastX=0,lastT=0,vel=0;
+stage.addEventListener('pointerdown',e=>{
+  dragging=true;base=p;target=p;sx=lastX=e.clientX;sy=e.clientY;t0=lastT=performance.now();vel=0;
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove',e=>{
+  if(!dragging)return;
+  const k=1/scale(), now=performance.now();
+  p=base+(e.clientX-sx)*k/PX;
+  const dt=now-lastT; if(dt>0)vel=(e.clientX-lastX)*k/dt;
+  lastX=e.clientX;lastT=now;
+});
+function end(e){
+  if(!dragging)return;
+  dragging=false;
+  const moved=Math.hypot(e.clientX-sx,e.clientY-sy);
+  if(moved<8&&performance.now()-t0<400){ // tap on the main plate
+    target=Math.round(base);p=base;
+    const r=art.getBoundingClientRect(), s=scale();
+    const ax=(e.clientX-r.left)/s, ay=(e.clientY-r.top)/s;
+    if(N&&Math.hypot(ax-CX,ay-(CY-R))<D/2){
+      const i=((target%N)+N)%N;
+      if(typeof window.onSelect==='function')window.onSelect(ITEMS[i],i);
+    }
+    return;
+  }
+  let t=Math.round(p+vel*0.045*(1000/PX));
+  t=Math.max(Math.round(base)-1,Math.min(Math.round(base)+1,t));
+  if(N<3)t=Math.max(0,Math.min(N-1,t));
+  target=t;
+}
+stage.addEventListener('pointerup',end);
+stage.addEventListener('pointercancel',end);
+
+/* ---- haptic: Android vibrate, iOS 17.4+ Safari/PWA via hidden switch ---- */
+function haptic(){
+  try{
+    if(navigator.vibrate){navigator.vibrate(18);return}
+    const l=document.getElementById('hap');if(l)l.click();
+  }catch(e){}
+}
+
+/* ---- add to cart ---- */
+let addT=0;
+$('#add').addEventListener('click',()=>{
+  if(!N)return;
+  haptic();
+  const i=((Math.round(target)%N)+N)%N;
+  if(typeof window.onAddToCart==='function')window.onAddToCart(ITEMS[i],i);
+  const b=$('#add'), sp=b.querySelector('span');
+  b.classList.add('done');sp.textContent='Added';
+  clearTimeout(addT);addT=setTimeout(()=>{b.classList.remove('done');sp.textContent='Add to cart'},1200);
+});
+
+/* ---- back button ---- */
+$('#back').addEventListener('click',()=>{
+  if(typeof window.onBack==='function')window.onBack();
+  else if(history.length>1)history.back();
+});
+
+window.Menu={setFoods,get current(){return N?ITEMS[((Math.round(target)%N)+N)%N]:null}};
+tick();
+
+/* ---- app wiring: shared checkout, admin uploads, close ---- */
+Checkout.init();
+window.onAddToCart=(it)=>{Checkout.add({key:'p:'+it.id,n:it.name,p:it.price,img:it.src||''},1,document.getElementById('add'))};
+window.onBack=()=>{try{parent.postMessage({type:'close-page'},'*')}catch(e){}if(window.parent===window&&history.length>1)history.back()};
+const SB='https://fubhpawdzzjutsfzyzhz.supabase.co',SBK='sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+async function sbGet(path){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);const r=await fetch(SB+'/rest/v1/'+path,{headers:{apikey:SBK,Authorization:'Bearer '+SBK},signal:c.signal});clearTimeout(t);return r.ok?await r.json():[]}catch(e){return[]}}
+/* crop empty space around each uploaded picture so every plate fills the ring the same way */
+function trimmed(url){return new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{try{
+  const sc=Math.min(1,900/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.max(1,Math.round(im.naturalWidth*sc)),h=Math.max(1,Math.round(im.naturalHeight*sc)),c=document.createElement('canvas');c.width=w;c.height=h;
+  const x=c.getContext('2d');x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
+  for(let py=0;py<h;py++)for(let px=0;px<w;px++)if(d[(py*w+px)*4+3]>16){if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py}
+  if(x1<0||(x0===0&&y0===0&&x1===w-1&&y1===h-1))return res(url);
+  const bw=x1-x0+1,bh=y1-y0+1,side=Math.round(Math.max(bw,bh)*1.04),o=document.createElement('canvas');o.width=o.height=side;
+  o.getContext('2d').drawImage(c,x0,y0,bw,bh,Math.round((side-bw)/2),Math.round((side-bh)/2),bw,bh);res(o.toDataURL('image/png'))}catch(e){res(url)}};im.onerror=()=>res(url);im.src=url})}
+(async()=>{
+  const cat=new URLSearchParams(location.search).get('cat')||'beef-fish-seafood';
+  const rows=await sbGet('menu_items?select=id,name,price,description,image_url,available&order=created_at.asc&limit=40&category_id=eq.'+encodeURIComponent(cat));
+  const list=rows.filter(r=>r.available!==false).map(r=>({id:r.id,name:r.name,price:Number(r.price)||0,details:r.description||'',src:r.image_url||'',img:r.image_url||''}));
+  await Promise.all(list.map(async it=>{if(it.src)it.img=await trimmed(it.src)}));
+  if(!list.length){$('#empty').style.display='flex';$('#add').style.display='none';return}
+  setFoods(list);
+})();
+</script>
+</body>
+</html>

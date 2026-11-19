@@ -285,7 +285,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
    ['beans-plantain', 'Beans & Plantain'],
    ['yam-potato', 'Yam & Potato Dishes'],
    ['chicken-turkey', 'Chicken, Turkey, Grills & BBQ'],
-   ['beef-fish-seafood', 'Beef, Fish & Seafood'],
+   ['beef-fish-seafood', 'Pepper Soup'],
    ['burgers-sandwiches-shawarma', 'Burgers, Sandwiches, Shawarma & Pizza'],
    ['small-chops-snacks', 'Small Chops & Snacks'],
    ['breakfast-specials', 'Breakfast & Specials'],
@@ -294,6 +294,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
    ['fresh-juices', 'Fresh Juices'],
    ['smoothies-milkshakes', 'Smoothies & Milkshakes'],
    ['water', 'Water']].forEach(function (c, i) { addCat(c[0], c[1], BGS[(i + 12) % BGS.length], 'Drinks'); });
+  CATS['beef-fish-seafood'].bg = '#3D7158';   // matches the Pepper Soup page
   var state = { screen: 'main', cat: ORDER[0], favs: {}, cart: [], q: '', prod: null, qty: 1, ptab: 'details', more: false };
   var app = document.getElementById('app');
 
@@ -680,7 +681,8 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     'rice-spaghetti-noodles': 'pages/rice-spaghetti-noodles.html',
     'burgers-sandwiches-shawarma': 'pages/dunuts.html',
     'small-chops-snacks': 'pages/small-chops.html',
-    'chicken-turkey': 'pages/product-carousel.html'
+    'chicken-turkey': 'pages/product-carousel.html',
+    'beef-fish-seafood': 'pages/pepper-soup.html'
   };
   ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
   PAGES['smoothies-milkshakes'] = 'pages/smoothies-milkshakes.html';   // drinks carousel: reads the admin Menu items, uses the shared checkout
@@ -691,7 +693,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   function circleAt(r) { return 'circle(' + r + 'px at ' + origin.x + 'px ' + origin.y + 'px)'; }
   function openCat(k, ev) {
     if (!PAGES[k]) { state.screen = 'menu'; state.cat = k; render(); return; }
-    openPage(PAGES[k] + '?cat=' + k + '&t=' + encodeURIComponent(CATS[k].label), CATS[k].bg, ev, CATS[k].label, /product-carousel/.test(PAGES[k]) ? function () { return true; } : undefined);
+    openPage(PAGES[k] + '?cat=' + k + '&t=' + encodeURIComponent(CATS[k].label), CATS[k].bg, ev, CATS[k].label, /product-carousel|pepper-soup/.test(PAGES[k]) ? function () { return true; } : undefined);
   }
   function satPx() {   // status-bar / notch height, measured here because iframes can't always see env()
     var p = document.createElement('div');
