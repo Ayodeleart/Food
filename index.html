@@ -667,6 +667,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
     'chicken-turkey': 'pages/product-carousel.html'
   };
   ORDER.forEach(function (k) { if (CATS[k].group === 'Drinks') PAGES[k] = 'pages/bubble-tea-protein.html'; });
+  PAGES['fresh-juices'] = 'pages/fresh-juices.html';   // juice carousel: reads the admin Menu items, uses the shared checkout
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var EASE = 'cubic-bezier(.22,.8,.2,1)';
   var origin = { x: 0, y: 0 };

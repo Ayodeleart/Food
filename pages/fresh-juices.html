@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fresh Juices</title>
+<style>
+  :root {
+    --bg-top: #e9fbfd;
+    --bg-bottom: #cdeef5;
+    --ink: #0d0d1f;
+    --muted: #a7b3b8;
+    --accent: #f08a24;
+    --bounce: cubic-bezier(.34, 1.56, .64, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+    background: #15161c;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ---------- Screen (clips anything leaving the page sideways) ---------- */
+  .screen {
+    position: relative;
+    width: 100%; max-width: 430px;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    border-radius: 0;
+    display: flex; flex-direction: column;
+  }
+
+  /* ---------- Page background: one layer per juice, cross-fades ---------- */
+  .bgs { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .bg { position: absolute; inset: 0; opacity: 0; transition: opacity .9s ease .25s; }
+  .bg.active { opacity: 1; }
+
+  /* ---------- Header: back button ---------- */
+  .header { padding: calc(max(var(--sat, 0px), env(safe-area-inset-top, 0px)) + 14px) 24px 0; position: relative; z-index: 5; }
+  .back {
+    width: 42px; height: 42px; border: 0; border-radius: 50%;
+    background: rgba(255,255,255,.65);
+    display: grid; place-items: center; cursor: pointer; font-size: 0;
+    transition: transform .3s var(--bounce);
+  }
+  .back:active { transform: scale(.88); }
+  .back::before {
+    content: ""; width: 11px; height: 11px;
+    border-left: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+    transform: translateX(3px) rotate(45deg); border-radius: 1px;
+  }
+
+  /* ---------- Product name + price (top) ---------- */
+  .info { position: relative; z-index: 4; pointer-events: none; padding: 14px 28px 0; max-width: 62%; }
+  .name { font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.05; letter-spacing: -.3px; }
+  .price { margin-top: 6px; font-size: 19px; font-weight: 700; color: var(--accent); transition: color .5s ease; }
+  .info.in { animation: infoIn .7s .25s var(--bounce) backwards; }
+  @keyframes infoIn {
+    0%   { opacity: 0; transform: translateY(16px) scale(.96); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* ---------- Carousel (overflow visible: fruit may leave the card) ---------- */
+  .carousel { position: relative; z-index: 2; flex: 1; margin-top: 2px; }
+  .track {
+    display: flex; gap: 14px; align-items: flex-end;
+    height: 100%; width: 100%; padding-bottom: 4px;
+    transition: transform .6s cubic-bezier(.3, .75, .2, 1);   /* smooth slide */
+    cursor: grab; user-select: none; touch-action: pan-y;
+  }
+  .track.dragging { transition: none; cursor: grabbing; }
+
+  /* Cards are SMALL while sliding. The one that lands bounces up to full size. */
+  .card {
+    flex: 0 0 76%;
+    height: 76%;
+    position: relative;
+    transform: scale(.74);
+    transition: transform .4s cubic-bezier(.4, 0, .2, 1);
+  }
+  .card.active {
+    transform: scale(1);
+    transition: transform .8s cubic-bezier(.3, 1.8, .5, 1);
+    animation: land 1s cubic-bezier(.3, 0, .3, 1) .36s backwards;
+  }
+  .track.dragging .card.active {          /* shrinks while you hold and slide */
+    transform: scale(.78);
+    transition: transform .25s ease;
+    animation: none;
+  }
+  @keyframes land {                        /* the bounce */
+    0%   { transform: scale(.74); }
+    38%  { transform: scale(1.1); }
+    58%  { transform: scale(.95); }
+    77%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  .card-bg {
+    position: absolute; inset: 0;
+    border-radius: 24px; overflow: hidden;
+    background: var(--card-bg);
+    opacity: .6;
+    transition: opacity .5s ease;
+  }
+  .card.active .card-bg { opacity: 1; }
+  .card-bg::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.35), transparent 60%);
+  }
+
+  /* Scene is bigger than the card: taller (above it) and wider (beside it) */
+  .scene { position: absolute; left: -8%; right: -8%; top: -30%; bottom: 0; pointer-events: none; }
+
+  /* ---------- Fruit burst: out from behind the cup ---------- */
+  .fruit, .leaf, .glass, .cup {
+    transition: transform .45s cubic-bezier(.5,0,.9,.4), opacity .3s ease;
+    transition-delay: calc(var(--i, 0) * 20ms);
+  }
+  .fruit, .leaf {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(calc(var(--r, 0deg) + var(--spin, 60deg))) scaleX(var(--fx, 1)) scale(.2);
+  }
+  .glass, .cup { opacity: 0; transform: translateX(-50%) translateY(50px) scale(.88); transition-delay: .2s; }
+
+  .card.active .glass,
+  .card.active .cup {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    transition: transform .7s var(--bounce), opacity .35s ease;
+    transition-delay: .5s;
+  }
+  .card.active .fruit,
+  .card.active .leaf {
+    opacity: 1;
+    transform: translate(0,0) rotate(var(--r, 0deg)) scaleX(var(--fx, 1)) scale(1);
+    transition: transform .85s cubic-bezier(.2,1.3,.35,1), opacity .25s ease;
+    transition-delay: calc(.68s + var(--i, 0) * 55ms);
+  }
+
+  /* Placeholder glass (shown until you set `image`) */
+  .glass {
+    position: absolute; left: 50%; bottom: 7%; z-index: 2;
+    width: 118px; height: 190px;
+    border-radius: 6px 6px 24px 24px;
+    background: linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,.12) 45%, rgba(255,255,255,.4));
+    border: 1px solid rgba(255,255,255,.7);
+    overflow: hidden;
+  }
+  .glass .liquid { position: absolute; left: 0; right: 0; bottom: 0; height: 84%; background: var(--liquid); border-radius: 0 0 22px 22px; }
+  .glass .liquid::before {
+    content: ""; position: absolute; top: -7px; left: 0; right: 0; height: 14px;
+    background: var(--liquid-top); border-radius: 50%;
+  }
+
+  /* Your real product picture replaces the glass */
+  .cup {
+    position: absolute; left: 50%; bottom: 5%; z-index: 2;
+    height: 52%; width: auto; max-width: 78%;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 16px rgba(0,0,0,.18));
+  }
+
+  .fruit, .leaf { position: absolute; z-index: 1; }
+  .fruit img, .leaf img { display: block; width: 100%; height: 100%; object-fit: contain; -webkit-user-drag: none; user-select: none; }
+  .fruit img { filter: drop-shadow(0 9px 8px rgba(40,20,0,.28)); }
+  .leaf img  { filter: drop-shadow(0 6px 5px rgba(0,40,0,.22)); }
+
+  /* Fruit layout, % of the scene. Above ~23% top = outside the card. */
+  .s1 { left: 55%; top: 0%;  width: 74px; height: 74px; --r: -14deg; --i: 0; --spin: -60deg; }
+  .s2 { left: 36%; top: 15%; width: 58px; height: 58px; --r: 12deg;  --i: 1; --spin: 70deg; }
+  .s3 { left: 1%;  top: 19%; width: 90px; height: 90px; --r: -12deg; --i: 2; --spin: -70deg; }
+  .s4 { left: 68%; top: 27%; width: 78px; height: 78px; --r: 14deg;  --i: 3; --spin: 80deg; }
+  .s5 { left: 64%; top: 47%; width: 62px; height: 62px; --r: -10deg; --i: 4; --spin: -50deg; }
+  .s6 { left: 0%;  top: 71%; width: 76px; height: 76px; --r: 12deg;  --i: 5; --spin: 60deg; }
+  .s7 { left: 67%; top: 71%; width: 76px; height: 76px; --r: -14deg; --i: 6; --spin: -60deg; }
+  .l1 { left: 74%; top: 9%;  width: 44px; height: 30px; --r: 20deg;  --spin: 70deg;  --i: 1; }
+  .l2 { left: 86%; top: 20%; width: 38px; height: 26px; --r: -15deg; --spin: -70deg; --fx: -1; --i: 3; }
+  .l3 { left: 26%; top: 12%; width: 52px; height: 34px; --r: -12deg; --spin: -60deg; --i: 2; }
+  .l4 { left: 12%; top: 49%; width: 42px; height: 28px; --r: 34deg;  --spin: 70deg;  --i: 5; }
+  .glass, .cup { --i: 0; }
+
+  /* ---------- Tabs ---------- */
+  .tabs { position: relative; z-index: 3; display: flex; justify-content: safe center; gap: 16px; padding: 4px 24px 14px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    font-family: inherit; font-size: 13px; color: var(--muted);
+    background: none; border: 0; cursor: pointer; padding: 6px 2px 10px; flex: none; white-space: nowrap;
+    transition: color .3s ease;
+  }
+  .tab.active { color: var(--ink); font-weight: 600; }
+  .indicator {
+    position: absolute; bottom: 14px; height: 2px; width: 26px;
+    background: var(--accent); border-radius: 2px;
+    transition: left .8s cubic-bezier(.34,1.56,.64,1), background .5s ease;
+  }
+
+  /* ---------- Add to cart ---------- */
+  /* --ckh = height of the shared checkout bar while it shows, so Add to cart sits above it */
+  .cta-wrap { position: relative; z-index: 3; padding: 0 24px calc(26px + var(--ckh, 0px) + env(safe-area-inset-bottom, 0px)); transition: padding .5s ease; }
+  .cta {
+    width: 100%; height: 56px; border: 0; border-radius: 28px;
+    background: var(--accent); color: #fff;
+    font-family: inherit; font-size: 16px; font-weight: 700; letter-spacing: .2px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 12px 24px -8px var(--accent);
+    transition: background .5s ease, transform .35s var(--bounce), box-shadow .5s ease;
+  }
+  .cta:active { transform: scale(.95); }
+  .cta.bump { animation: bump .6s var(--bounce); }
+  @keyframes bump { 0% { transform: scale(.94); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+  .cta svg { width: 20px; height: 20px; }
+  .cta:disabled { opacity: .55; box-shadow: none; cursor: default; }
+  .empty { position: absolute; inset: 0; z-index: 3; display: grid; place-content: center; text-align: center; padding: 24px; color: var(--ink); font-size: 16px; opacity: .75; }
+  .empty[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="screen" id="screen">
+  <div class="empty" id="empty" hidden></div>
+  <div class="bgs" id="bgs"></div>
+  <header class="header top">
+    <button class="back round" id="back" aria-label="Back"></button>
+  </header>
+
+  <div class="info" id="info">
+    <div class="name" id="name"></div>
+    <div class="price" id="price"></div>
+  </div>
+
+  <section class="carousel" id="carousel">
+    <div class="track" id="track"></div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <div class="indicator" id="indicator"></div>
+  </nav>
+
+  <div class="cta-wrap">
+    <button class="cta" id="cta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.2l2 11h10.3l2-8H6.3"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>
+      <span id="ctaLabel">Add to cart</span>
+    </button>
+  </div>
+</div>
+
+<script src="../checkout.js"></script>
+<script>
+  /* =====================================================
+     CONFIG: edit this for your restaurant.
+     - image:   your product picture (transparent PNG works best).
+                While it is null, a placeholder glass is drawn.
+     - price:   number.   currency: symbol shown before it.
+     - accent:  colour of the price, underline and cart button.
+     - bgTop / bgBottom: the page background colours for that juice.
+     - fruits:  7 fruit pieces that burst out of the card (names from
+                FRUIT_SPRITES at the bottom of this file, or your own
+                image paths like "img/mango.png").
+     - leaves:  4 leaf pieces.
+     ===================================================== */
+  const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+  const CONFIG = { currency: "\u20A6", juices: [] };
+
+  /* Look and fruit burst per juice. A juice picks its theme from words in its name; names with no match
+     take the themes in turn. Name, price, picture and Sold out all come from the admin Menu items tab. */
+  const THEMES = [
+    { match: ["orange", "citrus", "tangerine"], accent: "#f08a24", bgTop: "#fff4e4", bgBottom: "#ffd7a3",
+      card: "#f9b262", cardTop: "#fbc57f", liquid: "#ff9a2a", liquidTop: "#ffd08a",
+      fruits: ["o_slice","o_whole","o_leafwhole","o_half","o_quarter","o_twoq","o_pair"],
+      leaves: ["leaf_orange","leaf_apple1","leaf_orange","leaf_apple3"] },
+    { match: ["apple"], accent: "#6f9f2e", bgTop: "#f6fce8", bgBottom: "#d3ecae",
+      card: "#bfe3a0", cardTop: "#e3f6c5", liquid: "#d9d96a", liquidTop: "#eef0a8",
+      fruits: ["a_slab","a_quarter","a_leafwhole","a_half","a_whole2","a_whole","a_pair"],
+      leaves: ["leaf_apple1","leaf_apple2","leaf_apple3","leaf_apple2"] },
+    { match: ["kiwi", "green"], accent: "#6a9a22", bgTop: "#f2f7d9", bgBottom: "#cfe08a",
+      card: "#a9c446", cardTop: "#d3e282", liquid: "#8fc02f", liquidTop: "#cfe87a",
+      fruits: ["k_slice","k_twoslice","k_half_big","k_half","k_half_ang","k_half_rot","k_slice_edge"],
+      leaves: ["leaf_apple2","leaf_apple1","leaf_apple3","leaf_apple1"] },
+    { match: ["pineapple", "ananas"], accent: "#d99100", bgTop: "#fffbe3", bgBottom: "#ffe796",
+      card: "#fbd24e", cardTop: "#fff0a6", liquid: "#fbd347", liquidTop: "#fff09a",
+      fruits: ["p_quarter","p_wedge","p_leafcluster","p_slice","p_crown","p_cluster","p_wedge_flip"],
+      leaves: ["leaf_apple3","leaf_apple2","leaf_apple1","leaf_apple2"] },
+    { match: ["watermelon", "melon"], accent: "#e8404f", bgTop: "#fff2f2", bgBottom: "#ffc6ca",
+      card: "#ff8e95", cardTop: "#ffc9cb", liquid: "#ff5a6a", liquidTop: "#ffa4ad",
+      fruits: ["w_half","w_quarter","w_whole","w_slice","w_quarter_flip","w_twoq","w_half_flip"],
+      leaves: ["leaf_apple1","leaf_apple3","leaf_apple2","leaf_apple1"] }
+  ];
+  function themeFor(name, i) {
+    const n = String(name || "").toLowerCase();
+    return THEMES.find(t => t.match.some(w => n.includes(w))) || THEMES[i % THEMES.length];
+  }
+  async function loadJuices() {
+    const cat = new URLSearchParams(location.search).get("cat") || "fresh-juices";
+    try {
+      const c = new AbortController(), t = setTimeout(() => c.abort(), 5000);
+      const r = await fetch(SB + "/rest/v1/menu_items?select=*&category_id=eq." + encodeURIComponent(cat) + "&order=created_at.asc",
+        { headers: { apikey: SBK, Authorization: "Bearer " + SBK }, signal: c.signal });
+      clearTimeout(t);
+      const rows = r.ok ? await r.json() : [];
+      CONFIG.juices = rows.map((x, i) => Object.assign({}, themeFor(x.name, i), {
+        id: x.id, name: x.name, tab: String(x.name || "").split(/\s+/)[0], price: Number(x.price) || 0,
+        image: x.image_url || null, sold: x.available === false }));
+    } catch (e) { CONFIG.juices = []; }
+  }
+
+  const FRUIT_SLOTS = ["s1","s2","s3","s4","s5","s6","s7"];
+  const LEAF_SLOTS  = ["l1","l2","l3","l4"];
+  const money = n => CONFIG.currency + n.toLocaleString("en-NG", {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+  const src = n => /[\/.]/.test(n) ? n : "../images/fruit/" + n + ".webp";
+
+  function init() {
+    const screen = document.getElementById("screen");
+    const track = document.getElementById("track");
+    const tabsEl = document.getElementById("tabs");
+    const indicator = document.getElementById("indicator");
+    const carousel = document.getElementById("carousel");
+    const info = document.getElementById("info");
+    const nameEl = document.getElementById("name");
+    const priceEl = document.getElementById("price");
+    const bgsEl = document.getElementById("bgs");
+    const cta = document.getElementById("cta");
+    const ctaLabel = document.getElementById("ctaLabel");
+
+    /* inside the app the parent closes the page from this button; opened on its own it just goes back */
+    document.getElementById("back").addEventListener("click", () => { if (window.parent === window) history.back(); });
+
+    CONFIG.juices.forEach((j, i) => {
+      const bg = document.createElement("div");
+      bg.className = "bg";
+      bg.style.background = `linear-gradient(180deg, ${j.bgTop}, ${j.bgBottom})`;
+      bgsEl.appendChild(bg);
+
+      const card = document.createElement("article");
+      card.className = "card";
+      card.style.setProperty("--card-bg", `linear-gradient(180deg, ${j.cardTop}, ${j.card})`);
+      card.style.setProperty("--liquid", j.liquid);
+      card.style.setProperty("--liquid-top", j.liquidTop);
+
+      const fruit = FRUIT_SLOTS.map((s, k) =>
+        `<div class="fruit ${s}"><img src="${src(j.fruits[k])}" alt="" draggable="false"></div>`).join("");
+      const leaves = LEAF_SLOTS.map((l, k) =>
+        `<div class="leaf ${l}"><img src="${src(j.leaves[k])}" alt="" draggable="false"></div>`).join("");
+      const cup = j.image
+        ? `<img class="cup" src="${j.image}" alt="${j.name}" draggable="false">`
+        : `<div class="glass"><div class="liquid"></div></div>`;
+
+      card.innerHTML = `<div class="card-bg"></div><div class="scene">${fruit}${leaves}${cup}</div>`;
+      track.appendChild(card);
+      const img = card.querySelector(".cup");
+      if (img) {
+        img.addEventListener("load", computeOffsets);
+        img.addEventListener("error", () => {   // picture missing: draw the placeholder glass instead
+          img.outerHTML = '<div class="glass"><div class="liquid"></div></div>'; computeOffsets();
+        });
+      }
+
+      const tab = document.createElement("button");
+      tab.className = "tab";
+      tab.textContent = j.tab || j.name;
+      tab.addEventListener("click", () => setActive(i));
+      tabsEl.insertBefore(tab, indicator);
+    });
+
+    const bgs = Array.from(bgsEl.children);
+    const cards = Array.from(track.children);
+    const tabs = Array.from(tabsEl.querySelectorAll(".tab"));
+    let current = -1, startX = 0, dragX = 0, dragging = false;
+
+    /* Distance from each fruit to the cup, so it starts hidden behind it */
+    function computeOffsets() {
+      cards.forEach(card => {
+        const scene = card.querySelector(".scene");
+        const cup = scene.querySelector(".cup, .glass");
+        if (!cup) return;
+        const gx = scene.clientWidth / 2;
+        const gy = cup.offsetTop + cup.offsetHeight * 0.3;
+        scene.querySelectorAll(".fruit, .leaf").forEach(el => {
+          el.style.setProperty("--dx", (gx - (el.offsetLeft + el.offsetWidth / 2)) + "px");
+          el.style.setProperty("--dy", (gy - (el.offsetTop + el.offsetHeight / 2)) + "px");
+        });
+      });
+    }
+
+    function layout() {
+      const cardW = cards[0].offsetWidth;
+      const gap = 14;
+      const containerW = carousel.getBoundingClientRect().width;
+      const offset = (containerW - cardW) / 2 - Math.max(current, 0) * (cardW + gap);
+      track.style.transform = `translateX(${offset + dragX}px)`;
+    }
+
+    function moveIndicator() {
+      const tab = tabs[Math.max(current, 0)];
+      indicator.style.left = (tab.offsetLeft + tab.offsetWidth / 2 - 13) + "px";
+    }
+
+    function updateInfo(j) {
+      info.classList.remove("in");
+      void info.offsetWidth;
+      nameEl.textContent = j.name;
+      priceEl.textContent = money(j.price);
+      info.classList.add("in");
+    }
+
+    function setActive(i) {
+      i = Math.max(0, Math.min(cards.length - 1, i));
+      const changed = i !== current;
+      current = i;
+      const j = CONFIG.juices[i];
+      cards.forEach((c, idx) => c.classList.toggle("active", idx === current));
+      tabs.forEach((t, idx) => t.classList.toggle("active", idx === current));
+      bgs.forEach((b, idx) => b.classList.toggle("active", idx === current));
+      screen.style.setProperty("--accent", j.accent);
+      if (changed) { updateInfo(j); ctaLabel.textContent = j.sold ? "Sold out" : "Add to cart"; cta.disabled = !!j.sold; }
+      const tb = tabs[current]; if (tb) tabsEl.scrollTo({ left: tb.offsetLeft - (tabsEl.clientWidth - tb.offsetWidth) / 2, behavior: "smooth" });
+      moveIndicator();
+      layout();
+    }
+
+    /* Swipe */
+    track.addEventListener("pointerdown", e => {
+      dragging = true; startX = e.clientX; dragX = 0;
+      track.classList.add("dragging");
+      track.setPointerCapture(e.pointerId);
+    });
+    track.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      dragX = e.clientX - startX;
+      layout();
+    });
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      track.classList.remove("dragging");
+      let next = current;
+      if (dragX < -40) next = current + 1;
+      else if (dragX > 40) next = current - 1;
+      dragX = 0;
+      setActive(next);
+      layout();
+    }
+    track.addEventListener("pointerup", endDrag);
+    track.addEventListener("pointercancel", endDrag);
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") setActive(current + 1);
+      if (e.key === "ArrowLeft") setActive(current - 1);
+    });
+
+    /* Add to cart */
+    let ctaTimer;
+    cta.addEventListener("click", () => {
+      const j = CONFIG.juices[current];
+      if (j.sold) return;
+      /* the shared checkout: one cart for the whole app, flying dot, bar and slide-up cart */
+      Checkout.add({ key: "fj:" + (j.id || j.name), n: j.name, p: j.price, img: j.image || "" }, 1, cta.querySelector("svg"));
+      cta.classList.remove("bump"); void cta.offsetWidth; cta.classList.add("bump");
+      ctaLabel.textContent = "Added \u2713";
+      clearTimeout(ctaTimer);
+      ctaTimer = setTimeout(() => { ctaLabel.textContent = CONFIG.juices[current].sold ? "Sold out" : "Add to cart"; }, 1400);
+    });
+
+    window.addEventListener("resize", () => { computeOffsets(); layout(); moveIndicator(); });
+    computeOffsets();
+    setActive(0);
+  }
+  Checkout.init();
+  loadJuices().then(() => {
+    if (!CONFIG.juices.length) {
+      const e = document.getElementById("empty");
+      e.innerHTML = "No juices yet.<br><small>Add them in the admin under Menu items.</small>"; e.hidden = false;
+      document.querySelector(".cta-wrap").hidden = true; document.getElementById("tabs").hidden = true;
+      return;
+    }
+    init();
+  });
+</script>
+
+</body>
+</html>
