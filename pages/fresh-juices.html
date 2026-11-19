@@ -266,33 +266,38 @@
   const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
   const CONFIG = { currency: "\u20A6", juices: [] };
 
-  /* Look and fruit burst per juice. A juice picks its theme from words in its name; names with no match
-     take the themes in turn. Name, price, picture and Sold out all come from the admin Menu items tab. */
+  /* Look and fruit burst per juice. The fruit is the one chosen in the admin (Menu items, Fresh Juices);
+     with nothing chosen it is read from the name. Name, price, picture and Sold out also come from the admin. */
   const THEMES = [
-    { match: ["orange", "citrus", "tangerine"], accent: "#f08a24", bgTop: "#fff4e4", bgBottom: "#ffd7a3",
+    { key: "orange", match: ["orange", "citrus", "tangerine"], accent: "#f08a24", bgTop: "#fff4e4", bgBottom: "#ffd7a3",
       card: "#f9b262", cardTop: "#fbc57f", liquid: "#ff9a2a", liquidTop: "#ffd08a",
       fruits: ["o_slice","o_whole","o_leafwhole","o_half","o_quarter","o_twoq","o_pair"],
       leaves: ["leaf_orange","leaf_apple1","leaf_orange","leaf_apple3"] },
-    { match: ["apple"], accent: "#6f9f2e", bgTop: "#f6fce8", bgBottom: "#d3ecae",
+    { key: "apple", match: ["apple"], accent: "#6f9f2e", bgTop: "#f6fce8", bgBottom: "#d3ecae",
       card: "#bfe3a0", cardTop: "#e3f6c5", liquid: "#d9d96a", liquidTop: "#eef0a8",
       fruits: ["a_slab","a_quarter","a_leafwhole","a_half","a_whole2","a_whole","a_pair"],
       leaves: ["leaf_apple1","leaf_apple2","leaf_apple3","leaf_apple2"] },
-    { match: ["kiwi", "green"], accent: "#6a9a22", bgTop: "#f2f7d9", bgBottom: "#cfe08a",
+    { key: "kiwi", match: ["kiwi", "green"], accent: "#6a9a22", bgTop: "#f2f7d9", bgBottom: "#cfe08a",
       card: "#a9c446", cardTop: "#d3e282", liquid: "#8fc02f", liquidTop: "#cfe87a",
       fruits: ["k_slice","k_twoslice","k_half_big","k_half","k_half_ang","k_half_rot","k_slice_edge"],
       leaves: ["leaf_apple2","leaf_apple1","leaf_apple3","leaf_apple1"] },
-    { match: ["pineapple", "ananas"], accent: "#d99100", bgTop: "#fffbe3", bgBottom: "#ffe796",
+    { key: "pineapple", match: ["pineapple", "ananas"], accent: "#d99100", bgTop: "#fffbe3", bgBottom: "#ffe796",
       card: "#fbd24e", cardTop: "#fff0a6", liquid: "#fbd347", liquidTop: "#fff09a",
       fruits: ["p_quarter","p_wedge","p_leafcluster","p_slice","p_crown","p_cluster","p_wedge_flip"],
       leaves: ["leaf_apple3","leaf_apple2","leaf_apple1","leaf_apple2"] },
-    { match: ["watermelon", "melon"], accent: "#e8404f", bgTop: "#fff2f2", bgBottom: "#ffc6ca",
+    { key: "watermelon", match: ["watermelon", "melon"], accent: "#e8404f", bgTop: "#fff2f2", bgBottom: "#ffc6ca",
       card: "#ff8e95", cardTop: "#ffc9cb", liquid: "#ff5a6a", liquidTop: "#ffa4ad",
       fruits: ["w_half","w_quarter","w_whole","w_slice","w_quarter_flip","w_twoq","w_half_flip"],
       leaves: ["leaf_apple1","leaf_apple3","leaf_apple2","leaf_apple1"] }
   ];
-  function themeFor(name, i) {
+  /* No fruit: plain cup, neutral colours. Used when the admin picks "No fruit", or when nothing is picked
+     and the name matches no fruit, so a juice never shows the wrong fruit. */
+  const NONE = { key: "none", accent: "#8a5a2b", bgTop: "#f6f1e8", bgBottom: "#e3d8c6", card: "#d8c7ab", cardTop: "#ece0cb",
+    liquid: "#c9a36a", liquidTop: "#e8d3a8", fruits: [], leaves: [] };
+  function themeFor(name, fruit) {
+    if (fruit) { const t = fruit === "none" ? NONE : THEMES.find(t => t.key === fruit); if (t) return t; }
     const n = String(name || "").toLowerCase();
-    return THEMES.find(t => t.match.some(w => n.includes(w))) || THEMES[i % THEMES.length];
+    return THEMES.find(t => t.match.some(w => n.includes(w))) || NONE;
   }
   async function loadJuices() {
     const cat = new URLSearchParams(location.search).get("cat") || "fresh-juices";
@@ -302,7 +307,7 @@
         { headers: { apikey: SBK, Authorization: "Bearer " + SBK }, signal: c.signal });
       clearTimeout(t);
       const rows = r.ok ? await r.json() : [];
-      CONFIG.juices = rows.map((x, i) => Object.assign({}, themeFor(x.name, i), {
+      CONFIG.juices = rows.map(x => Object.assign({}, themeFor(x.name, x.fruit), {
         id: x.id, name: x.name, tab: String(x.name || "").split(/\s+/)[0], price: Number(x.price) || 0,
         image: x.image_url || null, sold: x.available === false }));
     } catch (e) { CONFIG.juices = []; }
@@ -343,9 +348,9 @@
       card.style.setProperty("--liquid-top", j.liquidTop);
 
       const fruit = FRUIT_SLOTS.map((s, k) =>
-        `<div class="fruit ${s}"><img src="${src(j.fruits[k])}" alt="" draggable="false"></div>`).join("");
+        j.fruits[k] ? `<div class="fruit ${s}"><img src="${src(j.fruits[k])}" alt="" draggable="false"></div>` : "").join("");
       const leaves = LEAF_SLOTS.map((l, k) =>
-        `<div class="leaf ${l}"><img src="${src(j.leaves[k])}" alt="" draggable="false"></div>`).join("");
+        j.leaves[k] ? `<div class="leaf ${l}"><img src="${src(j.leaves[k])}" alt="" draggable="false"></div>` : "").join("");
       const cup = j.image
         ? `<img class="cup" src="${j.image}" alt="${j.name}" draggable="false">`
         : `<div class="glass"><div class="liquid"></div></div>`;
