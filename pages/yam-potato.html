@@ -6,15 +6,17 @@
 <title>Yam &amp; Potato Dishes</title>
 <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#fff3ea;--sub:rgba(255,236,228,.86);--price:#ffd6cb;--W:min(100vw,430px);--p:calc(var(--W)*.43);
- padding-top:max(var(--sat,0px),env(safe-area-inset-top,0px))}
+:root{--ink:#fff3ea;--sub:rgba(255,236,228,.86);--price:#ffd6cb;--W:min(100vw,430px);--p:calc(var(--W)*.43)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:pan-y}   /* vertical scroll only: the page never moves sideways */
-html,body{margin:0;max-width:100%;overflow-x:hidden}
+html,body{margin:0;height:100%;overflow:hidden}
 body{background:#b3121f;color:var(--ink);font-family:'Josefin Sans',system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
 /* deep red cloth */
 .cloth{position:fixed;inset:0;z-index:0;pointer-events:none;
  background:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.08),transparent 60%),radial-gradient(110% 70% at 50% 105%,rgba(40,0,6,.28),transparent 62%),
  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .45 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* the menu scrolls inside this box, so there is no page bounce showing what is behind it, and no scroll bar */
+#sc{position:fixed;inset:0;z-index:1;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;scrollbar-width:none;-ms-overflow-style:none;padding-top:max(var(--sat,0px),env(safe-area-inset-top,0px))}
+#sc::-webkit-scrollbar{display:none;width:0;height:0}
 .app{position:relative;z-index:1;max-width:430px;margin:0 auto;padding:30px 0 calc(140px + var(--ckh,0px));overflow-x:hidden}
 @supports (overflow:clip){.app{overflow-x:clip}}
 .top{position:absolute;left:12px;top:20px;z-index:5}
@@ -70,10 +72,12 @@ header p:empty{display:none}
 </head>
 <body>
 <div class="cloth"></div>
+<div id="sc">
 <div class="app">
   <div class="top"><button class="round" id="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
   <header><h1 id="brand"></h1><p id="tag"></p></header>
   <div class="list" id="list"></div>
+</div>
 </div>
 
 <div class="ov" id="ov">
@@ -90,7 +94,7 @@ const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZ
 const Q = new URLSearchParams(location.search), CAT = Q.get('cat') || 'yam-potato', TITLE = Q.get('t') || 'Yam & Potato Dishes';
 let DISHES = [];
 
-const $ = id => document.getElementById(id);
+const $ = id => document.getElementById(id), sc = $('sc');
 const money = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG');
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -128,10 +132,10 @@ function build() {
 }
 
 /* ---------- plates roll as you scroll (left ones one way, right ones the other) ---------- */
-const angleOf = (i, y = scrollY) => y * 0.4 * (i % 2 ? -1 : 1);
+const angleOf = (i, y = sc.scrollTop) => y * 0.4 * (i % 2 ? -1 : 1);
 let spinQ = false;
-function spin() { spinQ = false; const y = scrollY; plateIns.forEach((el, i) => { el.style.transform = 'rotate(' + angleOf(i, y).toFixed(1) + 'deg)'; }); }
-addEventListener('scroll', () => { if (!spinQ && !open) { spinQ = true; requestAnimationFrame(spin); } }, { passive: true });
+function spin() { spinQ = false; const y = sc.scrollTop; plateIns.forEach((el, i) => { el.style.transform = 'rotate(' + angleOf(i, y).toFixed(1) + 'deg)'; }); }
+sc.addEventListener('scroll', () => { if (!spinQ && !open) { spinQ = true; requestAnimationFrame(spin); } }, { passive: true });
 
 /* ---------- tap a plate: it rolls up and floats over the menu; x (or a tap anywhere) rolls it back down ---------- */
 let open = null, openedAt = 0;   // { el, fly, i }
@@ -146,7 +150,7 @@ function openPlate(el) {
   fly.style.transform = `translate(0px,0px) scale(1) rotate(${a0}deg)`;   // starts exactly as it was rolled on the list
   document.body.appendChild(fly);
   el.style.visibility = 'hidden';
-  document.documentElement.style.overflow = 'hidden';
+  sc.style.overflowY = 'hidden';
   open = { el, fly, i }; openedAt = performance.now();
   const tw = Math.min(vw * 0.94, vh * 0.52, 440), top = Math.max(70, vh * 0.09);
   const dx = vw / 2 - (r.left + r.width / 2), dy = top + tw / 2 - (r.top + r.height / 2);
@@ -165,7 +169,7 @@ function closePlate() {
   fly.classList.remove('float');
   $('ov').classList.remove('on');
   fly.style.transform = `translate(0px,0px) scale(1) rotate(${angleOf(i)}deg)`;   // rolls back down to its spot
-  setTimeout(() => { fly.remove(); el.style.visibility = ''; document.documentElement.style.overflow = ''; }, 1100);
+  setTimeout(() => { fly.remove(); el.style.visibility = ''; sc.style.overflowY = ''; }, 1100);
 }
 $('list').addEventListener('click', e => { const p = e.target.closest('.plate'); if (p) openPlate(p); });
 $('list').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('plate')) { e.preventDefault(); openPlate(e.target); } });
