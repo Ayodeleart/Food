@@ -641,6 +641,19 @@ function refreshPhotos(){
     buildRail();renderTray();renderInfo();renderPrice();
   },120);
 }
+/* crop to what is drawn and centre it in a square, so every swallow picture renders at the same size however it was exported */
+function normalize(im){
+  try{
+    const k=Math.min(1,800/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.max(1,Math.round(im.naturalWidth*k)),h=Math.max(1,Math.round(im.naturalHeight*k)),
+          c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(im,0,0,w,h);
+    const d=x.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
+    for(let py=0;py<h;py++)for(let px=0;px<w;px++)if(d[(py*w+px)*4+3]>16){if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py}
+    if(x1<0)return null;
+    const bw=x1-x0+1,bh=y1-y0+1,side=Math.round(Math.max(bw,bh)*1.04),o=document.createElement('canvas');o.width=o.height=side;
+    o.getContext('2d').drawImage(c,x0,y0,bw,bh,Math.round((side-bw)/2),Math.round((side-bh)/2),bw,bh);
+    return o.toDataURL('image/png');
+  }catch(e){return null}
+}
 async function loadFoodPhotos(){
   let rows;
   try{
@@ -651,7 +664,10 @@ async function loadFoodPhotos(){
   FOODS.forEach(function(f){
     const url=m[PLATE_KEY[f.id]||f.id];if(!url||f.img)return;
     const im=new Image();im.crossOrigin='anonymous';
-    im.onload=function(){f.img=url;f._im=im;refreshPhotos()};
+    im.onload=function(){
+      if(f.cat==='swallow'){const u=normalize(im);if(u){const n=new Image();n.onload=function(){f.src=url;f.img=u;f._im=n;refreshPhotos()};n.src=u;return}}
+      f.src=url;f.img=url;f._im=im;refreshPhotos();
+    };
     im.src=url;
   });
 }
@@ -1159,7 +1175,7 @@ async function packAndAdd(){
   const sf=F(S.soup),sw=S.swallow?F(S.swallow.id):null;
   const plateData={id:Date.now(),parts:parts(),total:total()};
   const addToApp=function(){
-    Checkout.add({key:'swallow:'+plateData.id,n:(sf?sf.name:'Soup')+(sw?' & '+sw.name:'')+' plate',p:plateData.total,img:(sf&&sf.img)||''},1,null);
+    Checkout.add({key:'swallow:'+plateData.id,n:(sf?sf.name:'Soup')+(sw?' & '+sw.name:'')+' plate',p:plateData.total,img:(sf&&(sf.src||sf.img))||''},1,null);
   };
 
   const tray=$('#tray'),pack=$('#pack'),pf=$('#pkFood'),p3=$('#pk3d');

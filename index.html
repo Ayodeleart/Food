@@ -257,17 +257,24 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 })();
 </script>
 <script>
-/* Splash: plays once each time the app is opened (pages/../splash.html), tap to skip */
+/* Splash: plays EVERY time the app opens and can't be skipped. A copy of splash.html is kept in localStorage so it starts
+   instantly (and with no network). Bump SPLASH_V whenever splash.html changes so phones save the new copy. */
 (function () {
-  try { if (sessionStorage.getItem('jk-splash')) return; sessionStorage.setItem('jk-splash', '1'); } catch (e) {}
+  var SPLASH_V = '2', KEY = 'jk-splash-html', VK = 'jk-splash-ver', html = null;
+  try { if (localStorage.getItem(VK) === SPLASH_V) html = localStorage.getItem(KEY); } catch (e) {}
   var d = document.createElement('div');
   d.id = 'splash'; d.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;z-index:99999;background:#c4271f;transition:opacity .45s ease';
-  d.innerHTML = '<iframe src="splash.html" title="Jeun Koyo" style="width:100%;height:100%;border:0;display:block"></iframe>';
-  document.body.appendChild(d);
+  var f = document.createElement('iframe');
+  f.title = 'Jeun Koyo'; f.style.cssText = 'width:100%;height:100%;border:0;display:block';
+  if (html) f.srcdoc = html; else f.src = 'splash.html';
+  d.appendChild(f); document.body.appendChild(d);
+  if (!html) fetch('splash.html').then(function (r) { return r.ok ? r.text() : ''; }).then(function (x) {
+    if (x && x.indexOf('splash:done') > -1) { try { localStorage.setItem(KEY, x); localStorage.setItem(VK, SPLASH_V); } catch (e) {} }
+  }).catch(function () {});
   var gone = false;
   function end() { if (gone) return; gone = true; d.style.opacity = 0; setTimeout(function () { d.remove(); }, 500); }
   window.addEventListener('message', function (e) { if (e.data === 'splash:done') end(); });
-  setTimeout(end, 14000);
+  setTimeout(end, 14000);   // safety net only: the splash itself ends in about 8 seconds
 })();
 </script>
 <script src="checkout.js"></script>
