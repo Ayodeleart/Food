@@ -36,6 +36,9 @@ header p:empty{display:none}
 .ring.a{inset:-12%;transform:rotate(18deg) scaleY(.985)}
 .ring.b{inset:-15%;border-color:rgba(255,255,255,.14);transform:rotate(-14deg) scaleX(.985)}
 .plate{position:absolute;inset:0;cursor:pointer;border-radius:50%}
+/* no box or focus ring when a plate (or any button) is tapped */
+.plate,.plate:focus,.plate:focus-visible,button,button:focus,button:focus-visible{outline:none;-webkit-tap-highlight-color:transparent}
+.plate img,.plate svg{-webkit-touch-callout:none}
 .plate .in{width:100%;height:100%;will-change:transform}
 .plate svg,.plate img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(50,0,8,.4));-webkit-user-drag:none}
 .txt{position:absolute;pointer-events:none}
