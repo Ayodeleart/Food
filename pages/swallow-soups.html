@@ -176,6 +176,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pc[aria-pressed="true"] .disc{transform:scale(1.12)}
 .pc[aria-pressed="true"] .pn{text-decoration:underline;text-underline-offset:3px}
 .pk-list.strip .pc{flex:0 0 auto}
+.pc:focus-visible,.pc:focus{outline:none}
 .pk-list.strip .disc{width:60px;height:60px;padding:0}
 .pn{font:700 12.5px/1.15 var(--body);color:var(--ink)}
 .pg{font:700 11px/1 var(--body);color:var(--ink-soft)}
@@ -301,15 +302,15 @@ const FOODS = [
   {id:'white',  cat:'rice', name:'White rice',  price:200, c:'#f4efe3', g1:'#ffffff', g2:'#d3c9b1', img:null},
   {id:'fried',  cat:'rice', name:'Fried rice',  price:300, c:'#e6bf4a', g1:'#5c9a3a', g2:'#e8802b', img:null},
   /* soups */
-  {id:'egusi',  cat:'soup', name:'Egusi',     price:1000, c:'#b9893a', img:null,
+  {id:'egusi',  cat:'soup', name:'Egusi',     price:0, c:'#b9893a', img:null,
     spec:[{c:'#f1d56e',n:34,r:[2.6,4.6]},{c:'#3f7a2e',n:12,r:[1.4,2.8]},{c:'#c23b1d',n:7,r:[1.4,2.2]}]},
-  {id:'efo',    cat:'soup', name:'Efo riro',  price:900,  c:'#2f5f2a', img:null,
+  {id:'efo',    cat:'soup', name:'Efo riro',  price:0, spoon:300,  c:'#2f5f2a', img:null,
     spec:[{c:'#4f8a3c',n:34,r:[1.8,3.4]},{c:'#c4321b',n:11,r:[1.6,2.6]},{c:'#1d3f1c',n:14,r:[1.4,2.6]}]},
-  {id:'ogbono', cat:'soup', name:'Ogbono',    price:1000, c:'#7a5124', img:null,
+  {id:'ogbono', cat:'soup', name:'Ogbono',    price:0, c:'#7a5124', img:null,
     spec:[{c:'#a87a3c',n:26,r:[2.6,4.4],e:1},{c:'#4d3015',n:14,r:[2,3.4],e:1},{c:'#c4321b',n:6,r:[1.4,2]}]},
-  {id:'okra',   cat:'soup', name:'Okra',      price:800,  c:'#6f9a3a', img:null,
+  {id:'okra',   cat:'soup', name:'Okra',      price:0,  c:'#6f9a3a', img:null,
     spec:[{c:'#b9d36b',n:20,r:[2.2,3.6]},{c:'#2f5a1f',n:18,r:[1,1.8]},{c:'#e0f0a0',n:10,r:[1.2,2]}]},
-  {id:'banga',  cat:'soup', name:'Banga',     price:1000, c:'#c3541a', img:null,
+  {id:'banga',  cat:'soup', name:'Banga',     price:0, c:'#c3541a', img:null,
     spec:[{c:'#e88a3a',n:26,r:[1.8,3.2]},{c:'#7a2e10',n:14,r:[2,3.6]},{c:'#f5c06a',n:8,r:[1.4,2.2]}]},
   /* protein: price is per piece */
   {id:'beef',   cat:'protein', name:'Beef',       price:400,  img:null},
@@ -479,13 +480,13 @@ const NS=SOUPS.length;
 const nextOf=function(i){return (i+1)%NS};
 const prevOf=function(i){return i<0?NS-1:(i-1+NS)%NS};
 
-const S={soup:null,swallow:null,protein:[]};    // swallow:{id,qty}   protein:[{id,qty}]
+const S={soup:null,spoons:0,swallow:null,protein:[]};    // swallow:{id,qty}   protein:[{id,qty}]
 let idx=-1,prevKeys=new Set(),busy=false,flow=false,P=null;
 
 function pieces(){const a=[];S.protein.forEach(function(p){for(let i=0;i<p.qty;i++)a.push(p.id)});return a.slice(0,CAP)}
 function total(){
   let t=0;
-  if(S.soup)t+=F(S.soup).price;
+  if(S.soup)t+=F(S.soup).price+(F(S.soup).spoon||0)*S.spoons;
   if(S.swallow)t+=S.swallow.qty*F(S.swallow.id).price;
   S.protein.forEach(function(p){t+=p.qty*F(p.id).price});
   return t;
@@ -493,6 +494,7 @@ function total(){
 function parts(noSoup){
   const a=[];
   if(S.soup&&!noSoup)a.push(F(S.soup).name+' soup');
+  if(S.soup&&F(S.soup).spoon&&S.spoons)a.push(S.spoons+' '+(S.spoons>1?'spoons':'spoon')+' of '+F(S.soup).name);
   if(S.swallow){const f=F(S.swallow.id);a.push(S.swallow.qty+' '+(S.swallow.qty>1?'wraps':'wrap')+' of '+f.name)}
   if(S.protein.length)a.push(S.protein.map(function(p){return p.qty+' '+F(p.id).name.toLowerCase()}).join(', '));
   return a;
@@ -523,10 +525,11 @@ function renderTray(){
   $('#tray').classList.toggle('has-plate',show);
   prevKeys=cur;
 }
+const soupTag=function(f){return f.spoon?fmt(f.spoon)+' per spoon':'Free'};
 function buildRail(){
   $('#rail').innerHTML=SOUPS.map(function(f,i){
-    return '<button class="sc" style="--i:'+i+'" data-i="'+i+'" aria-pressed="false" aria-label="'+f.name+' soup, '+fmt(f.price)+'">'+
-      '<span class="sd">'+art(f)+'<span class="tick">\u2713</span></span><span class="sn">'+f.name+'</span><span class="sp">'+fmt(f.price)+'</span></button>';
+    return '<button class="sc" style="--i:'+i+'" data-i="'+i+'" aria-pressed="false" aria-label="'+f.name+' soup, '+soupTag(f)+'">'+
+      '<span class="sd">'+art(f)+'<span class="tick">\u2713</span></span><span class="sn">'+f.name+'</span><span class="sp">'+soupTag(f)+'</span></button>';
   }).join('');
 }
 function renderPeeks(){            // keeps the soup menu in step with the tray
@@ -792,10 +795,26 @@ function cancelPick(){const res=P&&P.res;P=null;closeSheet();res&&res(false)}
 function waitPick(kind){
   return new Promise(function(res){
     P={kind:kind,focus:null,qty:{},res:res};
-    if(kind==='swallow'&&S.swallow){P.qty[S.swallow.id]=S.swallow.qty;P.focus=S.swallow.id}
+    if(kind==='swallow'){const d=S.swallow||{id:LISTS.swallow[0].id,qty:1};P.qty[d.id]=d.qty;P.focus=d.id}
     if(kind==='protein'&&S.protein.length){S.protein.forEach(function(p){P.qty[p.id]=p.qty});P.focus=S.protein[0].id}
     openSheet(pickHTML(),'pk');
   });
+}
+
+/* ----- soups that are sold by the spoon (Efo riro): ask how many before moving on ----- */
+let SP=null;
+function spoonHTML(){
+  const f=F(S.soup),q=SP.q;
+  return '<div class="pk-head"><h2 id="sheetTitle">How many spoons?</h2><button class="pk-x" data-act="cancel" aria-label="Close">×</button></div>'+
+    '<div class="pk-big"><div class="pk-art">'+art(f)+'</div><div class="pk-name">'+f.name+'</div>'+
+    '<div class="pk-unit">'+fmt(f.spoon)+' per spoon</div>'+
+    '<div class="stepper"><button data-act="dec" aria-label="One less"'+(q<=1?' disabled':'')+'>−</button><output aria-live="polite">'+q+'</output>'+
+    '<button data-act="inc" aria-label="One more"'+(q>=20?' disabled':'')+'>+</button></div>'+
+    '<p class="total">'+q+' '+(q>1?'spoons':'spoon')+' · '+fmt(q*f.spoon)+'</p></div>'+
+    '<button class="sheet-cta" data-act="next"><span>Next: choose swallow</span></button>';
+}
+function waitSpoons(){
+  return new Promise(function(res){SP={q:S.spoons||1,res:res};openSheet(spoonHTML(),'pk')});
 }
 
 /* =====================================================================
@@ -808,7 +827,7 @@ function toast(msg){
 }
 function renderBadge(){}
 function resetPlate(){
-  S.soup=null;S.swallow=null;S.protein=[];prevKeys=new Set();idx=-1;
+  S.soup=null;S.spoons=0;S.swallow=null;S.protein=[];prevKeys=new Set();idx=-1;
   setArranged(false,true);setStep(1);renderPeeks();
 }
 async function dropIn(count){            // let the new food finish dropping onto the tray
@@ -817,7 +836,7 @@ async function dropIn(count){            // let the new food finish dropping ont
 }
 function cancelFlow(){
   setStep(1);
-  S.swallow=null;S.protein=[];
+  S.swallow=null;S.protein=[];S.spoons=0;
   setArranged(false);renderAll();
   flow=false;
 }
@@ -827,6 +846,10 @@ async function runFlow(){
   flow=true;
   setArranged(true);                      // the soup plate settles to make room
   await wait(560);
+  if(F(S.soup).spoon){
+    if(!(await waitSpoons())){cancelFlow();return}
+    renderPrice();
+  }
   setStep(2);
   if(!(await waitPick('swallow'))){cancelFlow();return}
   await dropIn(S.swallow?S.swallow.qty:0);
@@ -838,6 +861,7 @@ async function runFlow(){
 }
 
 /* ---------- 3D take-away: black container, clear snap-on lid, nylon bag ---------- */
+const LOGO=new Image();LOGO.src='../images/avatar.webp';
 const PK={ready:false,run:false,tw:[],st:{lift:0,lid:2.4,bag:0,bagA:0,cx:0,zoom:0,wob:0,close:0}};
 const PK_W=2.0,PK_D=1.5,PK_H=1.05,PK_N=6,PK_S=2.1;
 function pkBuild(){
@@ -893,6 +917,18 @@ function pkBuild(){
   const rim=new T3.Mesh(plate(rr(W+.07,D+.07,.43,N),rr(W-.07,D-.07,.29,N),.06,false),black);rim.position.y=H-.03;box.add(rim);
   box.add(new T3.Mesh(loft([{y:H-.2,pts:rr(W-.015,D-.015,.355,N)},{y:H-.16,pts:rr(W+.02,D+.02,.385,N)},{y:H-.1,pts:rr(W+.02,D+.02,.385,N)}]),black));
 
+  /* the Jeun Koyo logo on the container sides */
+  const lc=document.createElement('canvas');lc.width=256;lc.height=272;
+  const lt=new T3.CanvasTexture(lc);lt.anisotropy=8;
+  const lgm=new T3.MeshBasicMaterial({map:lt,transparent:true,depthWrite:false,toneMapped:false});
+  function lgDraw(){const g=lc.getContext('2d');g.clearRect(0,0,256,272);g.drawImage(LOGO,0,0,256,272);lt.needsUpdate=true}
+  if(LOGO.complete&&LOGO.naturalWidth)lgDraw();else LOGO.addEventListener('load',lgDraw);
+  [[0,D-.16,0,.8],[Math.PI,D-.16,0,.8],[Math.PI/2,W-.16,0,.62],[-Math.PI/2,W-.16,0,.62]].forEach(function(q){
+    const m=new T3.Mesh(new T3.PlaneGeometry(q[3]*.94,q[3]),lgm);
+    const g=new T3.Group();g.rotation.y=q[0];
+    m.position.set(0,H*.47,q[1]+.012);m.rotation.x=-.3;m.renderOrder=1;g.add(m);box.add(g);
+  });
+
   /* lid (front layer) */
   const clear=new T3.MeshPhysicalMaterial({color:0xdfe8f2,roughness:.06,metalness:0,transparent:true,opacity:.2,side:T3.DoubleSide,depthWrite:false,envMapIntensity:.9});
   const lidG=new T3.Group();sF.add(lidG);
@@ -942,7 +978,12 @@ function pkBuild(){
   }
   bx2.shadowBlur=3;bx2.shadowColor='#fff';bx2.strokeStyle='rgba(255,255,255,.85)';bx2.lineWidth=9;
   bx2.beginPath();bx2.moveTo(344,24);bx2.lineTo(680,24);bx2.arc(680,60,36,-Math.PI/2,Math.PI/2);bx2.lineTo(344,96);bx2.arc(344,60,36,Math.PI/2,1.5*Math.PI);bx2.stroke();
+  function bagLogo(){
+    [[256,100,74]].forEach(function(q){const h=q[2],w=h*463/491;mx.drawImage(LOGO,q[0]-w/2,q[1]-h/2,w,h)});
+    mapT.needsUpdate=true;
+  }
   const mapT=new T3.CanvasTexture(mc),bumpT=new T3.CanvasTexture(bc),alphaT=new T3.CanvasTexture(ac);
+  if(LOGO.complete&&LOGO.naturalWidth)bagLogo();else LOGO.addEventListener('load',bagLogo);
   function bagMat(){return new T3.MeshPhysicalMaterial({color:0xeceef2,map:mapT,bumpMap:bumpT,bumpScale:.04,alphaMap:alphaT,alphaTest:.5,roughness:.6,metalness:0,clearcoat:0,side:T3.DoubleSide,envMapIntensity:.25})}
   function mkPanel(){
     const g=new T3.PlaneGeometry(2*BW,BH,NX,NY);g.translate(0,BH/2,0);
@@ -1169,6 +1210,13 @@ $('#sheet').addEventListener('click',function(e){
   if(pk&&P){pickTap(pk);return}
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act;
+  if(SP){
+    if(act==='inc'&&SP.q<20)SP.q++;
+    else if(act==='dec'&&SP.q>1)SP.q--;
+    else if(act==='next'){S.spoons=SP.q;const r=SP.res;SP=null;closeSheet();r(true);return}
+    else if(act==='cancel'){const r=SP.res;SP=null;closeSheet();r(false);return}
+    $('#sheet').innerHTML=spoonHTML();return;
+  }
   if(P){
     if(act==='cancel')cancelPick();
     else if(act==='next')commitPick();
@@ -1177,7 +1225,7 @@ $('#sheet').addEventListener('click',function(e){
   }
   if(act==='close'){closeSheet();return}
 });
-function dismiss(){if(P)cancelPick();else closeSheet()}
+function dismiss(){if(SP){const r=SP.res;SP=null;closeSheet();r(false)}else if(P)cancelPick();else closeSheet()}
 $('#scrim').addEventListener('click',dismiss);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('sheet-open'))dismiss()});
 

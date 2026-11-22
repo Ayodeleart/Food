@@ -833,7 +833,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
       if (t.getAttribute) {
         var o = t.getAttribute('data-open'), f = t.getAttribute('data-fav'), a = t.getAttribute('data-add'), g = t.getAttribute('data-go'), ci = t.getAttribute('data-ci');
         if (t.getAttribute('data-pb')) { var pbx = document.getElementById('pb'), op = pbx.classList.toggle('open'); t.setAttribute('aria-expanded', String(op)); return; }
-        if (t.getAttribute('data-plate')) { openPlate(t.getAttribute('data-plate'), e); return; }
+        if (t.getAttribute('data-plate')) { if (t.getAttribute('data-plate') === 'swallow') { closePB(); openCat('swallow-soups', e); } else openPlate(t.getAttribute('data-plate'), e); return; }
         if (t.getAttribute('data-extras')) { openExtras(); return; }
         if (t.getAttribute('data-item')) { openItem(t.getAttribute('data-item')); return; }
         if (t.getAttribute('data-back')) { state.screen = state.back || 'main'; render(); return; }
