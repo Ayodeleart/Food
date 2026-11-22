@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Yam &amp; Potato Dishes</title>
+<link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#fff3ea;--sub:rgba(255,236,228,.86);--price:#ffd6cb;--W:min(100vw,430px);--p:calc(var(--W)*.43);
+ padding-top:max(var(--sat,0px),env(safe-area-inset-top,0px))}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0}
+body{background:#b3121f;color:var(--ink);font-family:'Josefin Sans',system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
+/* deep red cloth */
+.cloth{position:fixed;inset:0;z-index:0;pointer-events:none;
+ background:radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.08),transparent 60%),radial-gradient(110% 70% at 50% 105%,rgba(40,0,6,.28),transparent 62%),
+ url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .45 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.app{position:relative;z-index:1;max-width:430px;margin:0 auto;padding:30px 0 calc(140px + var(--ckh,0px))}
+.top{position:absolute;left:12px;top:20px;z-index:5}
+.round{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;padding:0;cursor:pointer}
+.round svg{width:20px;height:20px}
+header{text-align:center;padding:0 60px}
+header h1{margin:0;font-weight:300;font-size:19px;letter-spacing:.3em;padding-left:.3em;text-transform:uppercase;line-height:1.5;text-wrap:balance}
+header p{margin:7px 0 0;font-size:8px;letter-spacing:.26em;color:rgba(255,236,228,.65);font-weight:400;text-transform:uppercase}
+header p:empty{display:none}
+.list{margin-top:26px}
+.empty{margin:90px 30px;text-align:center;font-size:13px;letter-spacing:.14em;text-transform:uppercase;line-height:1.9;color:var(--sub)}
+.empty small{display:block;font-size:10px;opacity:.8}
+.dish{position:relative;height:calc(var(--p)*.9);margin-top:calc(var(--p)*-.06)}
+.pw{position:absolute;top:0;width:var(--p);height:var(--p)}
+.dish.l .pw{left:5%}.dish.r .pw{right:5%}
+.ring{position:absolute;border:1px solid rgba(255,255,255,.3);border-radius:50%;pointer-events:none}
+.ring.a{inset:-12%;transform:rotate(18deg) scaleY(.985)}
+.ring.b{inset:-15%;border-color:rgba(255,255,255,.14);transform:rotate(-14deg) scaleX(.985)}
+.plate{position:absolute;inset:0;cursor:pointer;border-radius:50%}
+.plate .in{width:100%;height:100%;will-change:transform}
+.plate svg,.plate img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(50,0,8,.4));-webkit-user-drag:none}
+.txt{position:absolute;pointer-events:none}
+.dish.l .txt{left:53%;width:43%;top:calc(var(--p)*.2)}
+.dish.r .txt{left:12%;width:37%;top:calc(var(--p)*.42)}
+.nm{font-family:'Mrs Saint Delafield','Allura',cursive;font-weight:400;font-size:clamp(28px,8.2vw,36px);line-height:1;margin:0;color:var(--ink)}
+.hl{width:46px;height:1px;background:#fff;opacity:.55;margin:3px 0 10px}
+.ds{margin:0;font-size:8.5px;line-height:1.75;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);font-weight:400}
+.pr{margin:12px 0 0;font-size:11px;letter-spacing:.14em;color:var(--price);font-weight:600}
+/* overlay: the plate floats over the red haze */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(118,6,18,.84);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .45s}
+.ov.on{opacity:1;pointer-events:auto}
+.x{position:absolute;right:16px;top:calc(max(var(--sat,0px),env(safe-area-inset-top,0px)) + 16px);width:44px;height:44px;border:0;border-radius:50%;background:#fff3ea;color:#8d0f1c;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(40,0,6,.3);z-index:70;opacity:0;transform:scale(.6) rotate(-90deg);transition:opacity .3s,transform .5s cubic-bezier(.34,1.56,.64,1)}
+.ov.on .x{opacity:1;transform:none;transition-delay:.35s}
+.info{position:absolute;left:0;right:0;text-align:center;padding:0 28px;opacity:0;transform:translateY(18px);transition:opacity .3s,transform .4s}
+.ov.on .info{opacity:1;transform:none;transition:opacity .5s .55s,transform .6s cubic-bezier(.34,1.4,.64,1) .55s}
+.info h2{font-family:'Mrs Saint Delafield','Allura',cursive;font-weight:400;font-size:46px;line-height:1;margin:0}
+.info p{margin:12px auto 0;max-width:300px;font-size:10px;line-height:1.8;letter-spacing:.13em;text-transform:uppercase;color:var(--sub)}
+.info p:empty{display:none}
+.info b{display:block;margin-top:14px;font-size:15px;letter-spacing:.16em;font-weight:600;color:var(--price)}
+@media (max-height:700px){.info h2{font-size:36px}.info p{margin-top:8px;line-height:1.6}.info b{margin-top:8px}}
+.bar{position:absolute;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px + var(--ckh,0px));z-index:70;transform:translateY(200%);transition:transform .35s}
+.ov.on .bar{transform:none;transition:transform .65s cubic-bezier(.34,1.56,.64,1) .5s}
+.add{width:100%;height:54px;border:0;border-radius:27px;background:#fff3ea;color:#8d0f1c;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(40,0,6,.35);transition:transform .3s cubic-bezier(.34,1.8,.5,1)}
+.add:active{transform:scale(.95)}
+.add:disabled{opacity:.6}
+.fly{position:fixed;z-index:60;margin:0;will-change:transform;pointer-events:none;transition:transform 1.05s cubic-bezier(.3,1.3,.5,1)}
+.fly .in{width:100%;height:100%}
+.fly.float .in{animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.fly svg,.fly img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 22px 22px rgba(40,0,6,.5))}
+@media (prefers-reduced-motion:reduce){.fly{transition-duration:.01s}}
+</style>
+</head>
+<body>
+<div class="cloth"></div>
+<div class="app">
+  <div class="top"><button class="round" id="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+  <header><h1 id="brand"></h1><p id="tag"></p></header>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="ov" id="ov">
+  <button class="x" id="x" aria-label="Close">&times;</button>
+  <div class="info" id="info"><h2 id="oN"></h2><p id="oD"></p><b id="oP"></b></div>
+  <div class="bar"><button class="add" id="add">Add to cart</button></div>
+</div>
+
+<script src="../checkout.js"></script>
+<script>
+/* Dishes come from the admin: Menu items > Yam & Potato Dishes. Each dish's name, price, description, picture (the real
+   plate, background removed) and Sold out are read from there. */
+const SB = 'https://fubhpawdzzjutsfzyzhz.supabase.co', SBK = 'sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
+const Q = new URLSearchParams(location.search), CAT = Q.get('cat') || 'yam-potato', TITLE = Q.get('t') || 'Yam & Potato Dishes';
+let DISHES = [];
+
+const $ = id => document.getElementById(id);
+const money = v => '\u20A6' + Number(v || 0).toLocaleString('en-NG');
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* an empty plate, shown only while a dish has no picture yet */
+const BLANK = `<svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="bp" cx="38%" cy="32%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e6e1d8"/></radialGradient></defs>
+  <circle cx="100" cy="100" r="98" fill="url(#bp)"/><circle cx="100" cy="100" r="76" fill="#f8f5ef"/><circle cx="100" cy="100" r="76" fill="none" stroke="#e1dbcf" stroke-width="1.2"/></svg>`;
+const plateHTML = d => d.image ? `<img src="${esc(d.image)}" alt="" draggable="false" decoding="async">` : BLANK;
+
+async function load() {
+  try {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), 5000);
+    const r = await fetch(SB + '/rest/v1/menu_items?select=*&category_id=eq.' + encodeURIComponent(CAT) + '&order=created_at.asc',
+      { headers: { apikey: SBK, Authorization: 'Bearer ' + SBK }, signal: c.signal });
+    clearTimeout(t);
+    const rows = r.ok ? await r.json() : [];
+    DISHES = rows.map(x => ({ id: x.id, name: x.name, price: Number(x.price) || 0, image: x.image_url || null,
+      desc: x.description || x.details || '', sold: x.available === false }));
+  } catch (e) { DISHES = []; }
+}
+
+/* ---------- build the menu ---------- */
+let plateIns = [];
+function build() {
+  $('brand').textContent = TITLE;
+  document.title = TITLE;
+  if (!DISHES.length) { $('list').innerHTML = '<div class="empty">No dishes yet<small>Add them in the admin under Menu items</small></div>'; return; }
+  $('list').innerHTML = DISHES.map((d, i) => `
+    <div class="dish ${i % 2 ? 'r' : 'l'}">
+      <div class="pw"><i class="ring a"></i><i class="ring b"></i>
+        <div class="plate" data-i="${i}" role="button" tabindex="0" aria-label="${esc(d.name)}"><div class="in">${plateHTML(d)}</div></div></div>
+      <div class="txt"><h2 class="nm">${esc(d.name)}</h2><div class="hl"></div><p class="ds">${esc(d.desc)}</p><p class="pr">${d.sold ? 'Sold out' : money(d.price)}</p></div>
+    </div>`).join('');
+  plateIns = [...document.querySelectorAll('.plate')].map(p => p.firstElementChild);
+  spin();
+}
+
+/* ---------- plates roll as you scroll (left ones one way, right ones the other) ---------- */
+const angleOf = (i, y = scrollY) => y * 0.4 * (i % 2 ? -1 : 1);
+let spinQ = false;
+function spin() { spinQ = false; const y = scrollY; plateIns.forEach((el, i) => { el.style.transform = 'rotate(' + angleOf(i, y).toFixed(1) + 'deg)'; }); }
+addEventListener('scroll', () => { if (!spinQ && !open) { spinQ = true; requestAnimationFrame(spin); } }, { passive: true });
+
+/* ---------- tap a plate: it rolls up and floats over the menu; x (or a tap anywhere) rolls it back down ---------- */
+let open = null, openedAt = 0;   // { el, fly, i }
+function openPlate(el) {
+  if (open) return;
+  const i = +el.dataset.i, d = DISHES[i], r = el.getBoundingClientRect(), a0 = angleOf(i);
+  const vw = innerWidth, vh = innerHeight;
+  const fly = document.createElement('div');
+  fly.className = 'fly';
+  fly.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+  fly.innerHTML = `<div class="in">${el.firstElementChild.innerHTML}</div>`;
+  fly.style.transform = `translate(0px,0px) scale(1) rotate(${a0}deg)`;   // starts exactly as it was rolled on the list
+  document.body.appendChild(fly);
+  el.style.visibility = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+  open = { el, fly, i }; openedAt = performance.now();
+  const tw = Math.min(vw * 0.94, vh * 0.52, 440), top = Math.max(70, vh * 0.09);
+  const dx = vw / 2 - (r.left + r.width / 2), dy = top + tw / 2 - (r.top + r.height / 2);
+  $('oN').textContent = d.name; $('oD').textContent = d.desc; $('oP').textContent = d.sold ? 'Sold out' : money(d.price);
+  $('info').style.top = (top + tw + 26) + 'px';
+  $('add').textContent = d.sold ? 'Sold out' : 'Add to cart \u00B7 ' + money(d.price);
+  $('add').disabled = !!d.sold;
+  $('ov').classList.add('on');
+  void fly.offsetWidth;
+  fly.style.transform = `translate(${dx}px,${dy}px) scale(${tw / r.width}) rotate(${360 * (Math.floor(a0 / 360) + 2)}deg)`;
+  setTimeout(() => { if (open && open.fly === fly) fly.classList.add('float'); }, 1000);
+}
+function closePlate() {
+  if (!open) return;
+  const { el, fly, i } = open; open = null;
+  fly.classList.remove('float');
+  $('ov').classList.remove('on');
+  fly.style.transform = `translate(0px,0px) scale(1) rotate(${angleOf(i)}deg)`;   // rolls back down to its spot
+  setTimeout(() => { fly.remove(); el.style.visibility = ''; document.documentElement.style.overflow = ''; }, 1100);
+}
+$('list').addEventListener('click', e => { const p = e.target.closest('.plate'); if (p) openPlate(p); });
+$('list').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('plate')) { e.preventDefault(); openPlate(e.target); } });
+$('x').addEventListener('click', closePlate);
+$('ov').addEventListener('click', e => { if (e.target.closest('.bar') || performance.now() - openedAt < 400) return; closePlate(); });   // tap anywhere else cancels
+addEventListener('keydown', e => { if (e.key === 'Escape') closePlate(); });
+
+/* ---------- the shared checkout: one cart for the whole app (flying dot, bar, slide-up cart) ---------- */
+$('add').addEventListener('click', () => {
+  if (!open) return;
+  const d = DISHES[open.i];
+  if (d.sold) return;
+  Checkout.add({ key: 'yp:' + (d.id || d.name), n: d.name, p: d.price, img: d.image || '' }, 1, $('add'));
+  setTimeout(closePlate, 280);
+});
+/* inside the app the parent closes the page from this button; opened on its own it goes back */
+$('back').addEventListener('click', () => { if (window.parent === window) history.back(); });
+['gesturestart', 'dblclick'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+
+Checkout.init();
+load().then(build);
+</script>
+</body>
+</html>
