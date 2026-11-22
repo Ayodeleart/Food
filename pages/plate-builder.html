@@ -125,7 +125,7 @@ const DISHES = {
   beans:  {boxed:true, like:"rice", title:"Beans", tabs:[["main","Beans"],["protein","Protein"],["extra","Extras"]]}
 };
 /* a dish with "like" also offers that dish's proteins and extras */
-const has=i=>i.d.includes(DISH)||(i.cat!=="main"&&DISHES[DISH].like&&i.d.includes(DISHES[DISH].like));
+const has=i=>i.cat==="protein"||i.d.includes(DISH)||(i.cat!=="main"&&DISHES[DISH].like&&i.d.includes(DISHES[DISH].like));
 const SIZE = {main:20, protein:12, extra:12};
 /* set "img" to a photo URL later (transparent PNG works best) */
 const S=["swallow"], R=["rice"], B=["beans"], SR=["swallow","rice"];
