@@ -293,11 +293,12 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
   function fruitUI() {
     var slot = document.getElementById('afrs');
-    if (slot) slot.innerHTML = isJuice() ? '<div class="frw" style="margin-top:8px"><span>Fruit on the page</span>' + fruitSelect('af', '') + '</div>' : '';
+    if (slot) slot.innerHTML = isJuice() ? '<div class="frw" style="margin-top:8px"><span>Fruit on the page</span>' + fruitSelect('af', '') + '</div>' : (menuCat === 'swallow-soups' ? '<select class="in" id="ak" style="margin-top:8px" aria-label="Type"><option value="">Type: automatic</option><option value="soup">Soup</option><option value="swallow">Swallow</option><option value="protein">Protein</option><option value="drink">Drink</option></select>' : '');
     return Promise.resolve();
   }
   function newItemBody(name, price, desc, det) {
     var o = { category_id: menuCat, category_name: catLabel(), name: name, price: price, description: desc || null, details: det || null, available: true };
+    var ak = document.getElementById('ak'); if (ak && ak.value) o.kind = ak.value;
     return o;
   }
   function rowBody(row, n, p) {

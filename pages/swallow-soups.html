@@ -697,16 +697,6 @@ async function loadFoods(){
     if(kind==='soup'&&price>0){f.spoon=price;f.price=0}      // a priced soup is sold by the spoon, a free one is included
     FOODS.push(f);
   });
-  if(!FOODS.some(function(f){return f.cat==='protein'})){
-    /* no protein items in Menu items: use the protein pictures already uploaded in the admin's Plate builder tab */
-    try{
-      const r=await fetch(SB+'/rest/v1/menu_images?select=key,image_url&key=like.plate%2F*',{headers:{apikey:SK,Authorization:'Bearer '+SK}});
-      const m={};if(r.ok)(await r.json()).forEach(function(x){if(x.image_url)m[x.key.slice(6)]=x.image_url});
-      [['beef','Beef',200],['fish','Fish',350],['chicken','Chicken',500],['turkey','Turkey',600],['egg','Boiled egg',100]].forEach(function(q){
-        if(m[q[0]])FOODS.push(Object.assign({id:'pl-'+q[0],cat:'protein',name:q[1],price:q[2],img:null,src:m[q[0]]},DEF.protein));
-      });
-    }catch(e){}
-  }
   await Promise.all(FOODS.map(loadPic));
   FOODS.forEach(function(f){if(f.cat==='soup')SOUPS.push(f);else if(LISTS[f.cat])LISTS[f.cat].push(f)});
   NS=SOUPS.length;
