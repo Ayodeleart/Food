@@ -39,8 +39,10 @@ header p:empty{display:none}
 /* no box or focus ring when a plate (or any button) is tapped */
 .plate,.plate:focus,.plate:focus-visible,button,button:focus,button:focus-visible{outline:none;-webkit-tap-highlight-color:transparent}
 .plate img,.plate svg{-webkit-touch-callout:none}
-.plate .in{width:100%;height:100%;will-change:transform}
-.plate svg,.plate img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(50,0,8,.4));-webkit-user-drag:none}
+.plate .in{position:relative;width:100%;height:100%}
+.plate svg,.plate img{display:block;width:100%;height:100%;object-fit:contain;-webkit-user-drag:none}
+/* soft shadow = a gradient that fades to nothing INSIDE the picture's square, so it can never be cut off into a box */
+.sh{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side at 50% 54%,rgba(45,0,8,.5) 80%,rgba(45,0,8,0) 100%)}
 .txt{position:absolute;pointer-events:none}
 .dish.l .txt{left:53%;width:43%;top:calc(var(--p)*.2)}
 .dish.r .txt{left:12%;width:37%;top:calc(var(--p)*.42)}
@@ -65,11 +67,11 @@ header p:empty{display:none}
 .add{width:100%;height:54px;border:0;border-radius:27px;background:#fff3ea;color:#8d0f1c;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 26px rgba(40,0,6,.35);transition:transform .3s cubic-bezier(.34,1.8,.5,1)}
 .add:active{transform:scale(.95)}
 .add:disabled{opacity:.6}
-.fly{position:fixed;z-index:60;margin:0;will-change:transform;pointer-events:none;transition:transform 1.05s cubic-bezier(.3,1.3,.5,1)}
-.fly .in{width:100%;height:100%}
+.fly{position:fixed;z-index:60;margin:0;pointer-events:none;transition:transform 1.05s cubic-bezier(.3,1.3,.5,1)}
+.fly .in{position:relative;width:100%;height:100%}
 .fly.float .in{animation:bob 3.2s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.fly svg,.fly img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 22px 22px rgba(40,0,6,.5))}
+.fly svg,.fly img{display:block;width:100%;height:100%;object-fit:contain}
 @media (prefers-reduced-motion:reduce){.fly{transition-duration:.01s}}
 </style>
 </head>
@@ -127,10 +129,10 @@ function build() {
   $('list').innerHTML = DISHES.map((d, i) => `
     <div class="dish ${i % 2 ? 'r' : 'l'}">
       <div class="pw"><i class="ring a"></i><i class="ring b"></i>
-        <div class="plate" data-i="${i}" role="button" tabindex="0" aria-label="${esc(d.name)}"><div class="in">${plateHTML(d)}</div></div></div>
+        <div class="plate" data-i="${i}" role="button" tabindex="0" aria-label="${esc(d.name)}"><i class="sh"></i><div class="in">${plateHTML(d)}</div></div></div>
       <div class="txt"><h2 class="nm">${esc(d.name)}</h2><div class="hl"></div><p class="ds">${esc(d.desc)}</p><p class="pr">${d.sold ? 'Sold out' : money(d.price)}</p></div>
     </div>`).join('');
-  plateIns = [...document.querySelectorAll('.plate')].map(p => p.firstElementChild);
+  plateIns = [...document.querySelectorAll('.plate .in')];
   spin();
 }
 
@@ -149,7 +151,7 @@ function openPlate(el) {
   const fly = document.createElement('div');
   fly.className = 'fly';
   fly.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
-  fly.innerHTML = `<div class="in">${el.firstElementChild.innerHTML}</div>`;
+  fly.innerHTML = `<i class="sh"></i><div class="in">${el.querySelector('.in').innerHTML}</div>`;
   fly.style.transform = `translate(0px,0px) scale(1) rotate(${a0}deg)`;   // starts exactly as it was rolled on the list
   document.body.appendChild(fly);
   el.style.visibility = 'hidden';
