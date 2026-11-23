@@ -146,6 +146,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.tray-wrap,.sc,.rail-head,.panel,.cta,.sd{animation:none!important}}
 
 /* ---------- sheets ---------- */
+.shO .ck-bar{transform:translateY(105%)!important}
 .scrim{position:fixed;inset:0;background:rgba(40,0,6,.5);opacity:0;visibility:hidden;transition:opacity .25s,visibility 0s .25s;z-index:20}
 .sheet{
   position:fixed;left:50%;bottom:0;width:min(430px,100%);z-index:21;background:#fff;border-radius:34px 34px 0 0;
@@ -236,7 +237,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 #orRing{border-color:rgba(255,255,255,.7)}
 .or-cp{position:relative;width:100%;height:100%;pointer-events:none}
 .or-cp .or-pl{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;filter:none}
-.or-so{position:absolute;left:21%;top:21%;width:58%;height:58%;border-radius:50%;overflow:hidden}
+.or-so{position:absolute;left:13%;top:13%;width:74%;height:74%;border-radius:50%;overflow:hidden}
 .or-so svg,.or-so img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;filter:none}
 .plate .pa .or-cp *{filter:none}
 #orCart{position:absolute;z-index:5;height:52px;border:0;border-radius:16px;background:#111;color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.3);font:700 15px/52px var(--body);text-align:center;padding:0;touch-action:manipulation}
@@ -769,12 +770,12 @@ let lastFocus=null;
 function openSheet(html,cls){
   lastFocus=document.activeElement;
   const sh=$('#sheet');sh.className='sheet'+(cls?' '+cls:'');sh.innerHTML=html;sh.setAttribute('aria-hidden','false');
-  document.body.classList.add('sheet-open');
+  document.body.classList.add('sheet-open');document.documentElement.classList.add('shO');
   const first=sh.querySelector('.pc')||sh.querySelector('.btn.main')||sh.querySelector('button');
   setTimeout(function(){first&&first.focus({preventScroll:true})},60);
 }
 function closeSheet(){
-  document.body.classList.remove('sheet-open');
+  document.body.classList.remove('sheet-open');document.documentElement.classList.remove('shO');
   $('#sheet').setAttribute('aria-hidden','true');
   if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true});
 }
