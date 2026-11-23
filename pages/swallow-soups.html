@@ -449,6 +449,12 @@ function sideArt(f){
       '<g fill="#e9f3cf" stroke="#7fb04a" stroke-width="1.6"><circle cx="48" cy="68" r="5.5"/><circle cx="44" cy="30" r="5"/></g>');
   }
 }
+function drinkArt(f){
+  const water=/water/i.test(f.name),c=f.c||(water?'#6fb7e6':'#d8321f');
+  return '<svg viewBox="0 0 100 100"><rect x="38" y="6" width="24" height="12" rx="3" fill="'+(water?'#2a6fa8':'#222')+'"/>'+
+    '<path d="M40 16h20v10c0 6 12 10 12 22v38a8 8 0 0 1-8 8H36a8 8 0 0 1-8-8V48c0-12 12-16 12-22z" fill="'+c+'" opacity="'+(water?'.55':'1')+'"/>'+
+    '<rect x="29" y="46" width="42" height="26" fill="#fff" opacity=".9"/><circle cx="50" cy="59" r="7" fill="'+(water?'#2a6fa8':'#d8321f')+'"/></svg>';
+}
 function art(f){
   if(f.img)return '<img class="ph" src="'+f.img+'" alt="" draggable="false">';
   switch(f.cat){
@@ -456,6 +462,7 @@ function art(f){
     case 'rice': return riceArt(f);
     case 'soup': return soupArt(f);
     case 'protein': return proteinArt(f);
+    case 'drink': return drinkArt(f);
     default: return sideArt(f);
   }
 }
@@ -475,22 +482,23 @@ const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const wait=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 
 const SOUPS=[];
-const LISTS={swallow:[],protein:[]};
-const UNITS={swallow:{one:'wrap',many:'wraps',max:6,title:'Choose your swallow'},protein:{one:'piece',many:'pieces',max:4,title:'Choose your protein'}};
+const LISTS={swallow:[],protein:[],drink:[]};
+const UNITS={swallow:{one:'wrap',many:'wraps',max:6,title:'Choose your swallow'},protein:{one:'piece',many:'pieces',max:4,title:'Choose your protein'},drink:{one:'bottle',many:'bottles',max:10,title:'Add a drink'}};
 const CAP=PROTEIN_POS.length;     // most protein pieces that fit on the plate
 let NS=0;
 const nextOf=function(i){return (i+1)%NS};
 const prevOf=function(i){return i<0?NS-1:(i-1+NS)%NS};
 
-const S={soup:null,spoons:0,swallow:null,protein:[]};    // swallow:{id,qty}   protein:[{id,qty}]
+const S={soup:null,spoons:0,swallow:null,protein:[],drink:[]};    // swallow:{id,qty}   protein:[{id,qty}]
 let idx=-1,prevKeys=new Set(),busy=false,flow=false,P=null;
 
 function pieces(){const a=[];S.protein.forEach(function(p){for(let i=0;i<p.qty;i++)a.push(p.id)});return a.slice(0,CAP)}
-function total(){
+function total(noDrink){
   let t=0;
   if(S.soup)t+=F(S.soup).price+(F(S.soup).spoon||0)*S.spoons;
   if(S.swallow)t+=S.swallow.qty*F(S.swallow.id).price;
   S.protein.forEach(function(p){t+=p.qty*F(p.id).price});
+  if(!noDrink)S.drink.forEach(function(p){t+=p.qty*F(p.id).price});
   return t;
 }
 function parts(noSoup){
@@ -499,6 +507,7 @@ function parts(noSoup){
   if(S.soup&&F(S.soup).spoon&&S.spoons)a.push(S.spoons+' '+(S.spoons>1?'spoons':'spoon')+' of '+F(S.soup).name);
   if(S.swallow){const f=F(S.swallow.id);a.push(S.swallow.qty+' '+(S.swallow.qty>1?'wraps':'wrap')+' of '+f.name)}
   if(S.protein.length)a.push(S.protein.map(function(p){return p.qty+' '+F(p.id).name.toLowerCase()}).join(', '));
+  if(S.drink.length)a.push(S.drink.map(function(p){return p.qty+' '+F(p.id).name.toLowerCase()}).join(', '));
   return a;
 }
 
@@ -656,10 +665,12 @@ function normalize(im){
     return o.toDataURL('image/png');
   }catch(e){return null}
 }
+const PROTEIN_RE=/beef|chicken|fish|turkey|goat|ponmo|shaki|kpomo|\begg|meat|panla|titus|croaker|tilapia|catfish|snail|assorted|\bcow|liver|kidney|suya|gizzard|prawn|crayfish|bush|ram\b|pomo|tripe/i;
+const DRINK_RE=/drink|water|coke|fanta|sprite|pepsi|malt|juice|soda|7up|mirinda|fayrouz|zobo|lemonade/i;
 const SOUP_RE=/soup|efo|egusi|ogbono|okra|banga|afang|ewedu|gbegiri|stew|oha|ofe\b|edikang|vegetable/i;
 const DEF={
   soup:{c:'#b9893a',spec:[{c:'#d9a74a',n:24,r:[2,3.6]},{c:'#7a5a22',n:12,r:[1.4,2.6]},{c:'#c23b1d',n:6,r:[1.2,2]}]},
-  swallow:{c:'#e6c27a',d:'#a8802f'},protein:{}
+  swallow:{c:'#e6c27a',d:'#a8802f'},protein:{},drink:{}
 };
 function loadPic(f){
   return new Promise(function(done){
@@ -680,11 +691,15 @@ async function loadFoods(){
     if(r.ok)rows=await r.json();
   }catch(e){}
   rows.filter(function(r){return r.available!==false}).forEach(function(r){
-    const kind=['soup','swallow','protein'].indexOf(r.kind)>-1?r.kind:(SOUP_RE.test(r.name)?'soup':'swallow'),price=Number(r.price)||0;
+    const kind=['soup','swallow','protein','drink'].indexOf(r.kind)>-1?r.kind:(DRINK_RE.test(r.name)?'drink':SOUP_RE.test(r.name)?'soup':PROTEIN_RE.test(r.name)?'protein':'swallow'),price=Number(r.price)||0;
     const f=Object.assign({id:r.id,cat:kind,name:r.name,price:price,img:null,src:r.image_url||''},DEF[kind]);
     if(kind==='soup'&&price>0){f.spoon=price;f.price=0}      // a priced soup is sold by the spoon, a free one is included
     FOODS.push(f);
   });
+  if(!FOODS.some(function(f){return f.cat==='drink'})){
+    FOODS.push(Object.assign({id:'d-soft',cat:'drink',name:'Soft drink',price:500,img:null,src:'',c:'#d8321f'},DEF.drink));
+    FOODS.push(Object.assign({id:'d-water',cat:'drink',name:'Table water',price:200,img:null,src:'',c:'#6fb7e6'},DEF.drink));
+  }
   await Promise.all(FOODS.map(loadPic));
   FOODS.forEach(function(f){if(f.cat==='soup')SOUPS.push(f);else if(LISTS[f.cat])LISTS[f.cat].push(f)});
   NS=SOUPS.length;
@@ -768,7 +783,8 @@ const CART_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function used(){return Object.keys(P.qty).reduce(function(a,k){return a+P.qty[k]},0)}
 function maxFor(id){
   const u=UNITS[P.kind];
-  return P.kind==='swallow'?u.max:Math.max(1,Math.min(u.max,CAP-(used()-(P.qty[id]||0))));
+  if(P.kind!=='protein')return u.max;
+  return Math.max(1,Math.min(u.max,CAP-(used()-(P.qty[id]||0))));
 }
 function pickHTML(){
   const u=UNITS[P.kind],f=P.focus?F(P.focus):null;
@@ -786,7 +802,7 @@ function pickHTML(){
     return '<button class="pc" data-pick="'+it.id+'" aria-pressed="'+(!!P.qty[it.id])+'" aria-label="'+it.name+', '+fmt(it.price)+' per '+u.one+'">'+
       '<span class="disc">'+art(it)+'<span class="tick">✓</span></span><span class="pn">'+it.name+'</span>'+(f?'':'<span class="pg">'+fmt(it.price)+'</span>')+'</button>';
   }).join('')+'</div>';
-  h+='<button class="sheet-cta" data-act="next">'+(P.kind==='swallow'?'<span>Next: choose protein</span>':CART_ICON+'<span>Add to cart</span>')+'</button>';
+  h+='<button class="sheet-cta" data-act="next">'+(P.kind==='swallow'?'<span>Next: choose protein</span>':(P.kind==='protein'&&LISTS.drink.length?'<span>Next: add a drink</span>':CART_ICON+'<span>Add to cart</span>'))+'</button>';
   return h;
 }
 function renderPick(fromRect,focusSel){
@@ -810,7 +826,7 @@ function pickTap(btn){
     if(P.qty[id]&&P.focus===id){delete P.qty[id];const ks=Object.keys(P.qty);P.focus=ks.length?ks[ks.length-1]:null}
     else if(P.qty[id]){P.focus=id}
     else{
-      if(used()>=CAP){toast('The plate is full');return}
+      if(P.kind==='protein'&&used()>=CAP){toast('The plate is full');return}
       P.qty[id]=1;P.focus=id;
     }
   }
@@ -826,7 +842,7 @@ function stepQty(act){
 function commitPick(){
   const ids=Object.keys(P.qty);
   if(P.kind==='swallow')S.swallow=ids.length?{id:ids[0],qty:P.qty[ids[0]]}:null;
-  else S.protein=ids.map(function(id){return {id:id,qty:P.qty[id]}});
+  else S[P.kind]=ids.map(function(id){return {id:id,qty:P.qty[id]}});
   const res=P.res;P=null;closeSheet();res(true);
 }
 function cancelPick(){const res=P&&P.res;P=null;closeSheet();res&&res(false)}
@@ -834,7 +850,7 @@ function waitPick(kind){
   return new Promise(function(res){
     P={kind:kind,focus:null,qty:{},res:res};
     if(kind==='swallow'){const d=S.swallow||{id:LISTS.swallow[0].id,qty:1};P.qty[d.id]=d.qty;P.focus=d.id}
-    if(kind==='protein'&&S.protein.length){S.protein.forEach(function(p){P.qty[p.id]=p.qty});P.focus=S.protein[0].id}
+    if(kind!=='swallow'&&S[kind].length){S[kind].forEach(function(p){P.qty[p.id]=p.qty});P.focus=S[kind][0].id}
     openSheet(pickHTML(),'pk');
   });
 }
@@ -865,7 +881,7 @@ function toast(msg){
 }
 function renderBadge(){}
 function resetPlate(){
-  S.soup=null;S.spoons=0;S.swallow=null;S.protein=[];prevKeys=new Set();idx=-1;
+  S.soup=null;S.spoons=0;S.swallow=null;S.protein=[];S.drink=[];prevKeys=new Set();idx=-1;
   setArranged(false,true);setStep(1);renderPeeks();
 }
 async function dropIn(count){            // let the new food finish dropping onto the tray
@@ -874,7 +890,7 @@ async function dropIn(count){            // let the new food finish dropping ont
 }
 function cancelFlow(){
   setStep(1);
-  S.swallow=null;S.protein=[];S.spoons=0;
+  S.swallow=null;S.protein=[];S.drink=[];S.spoons=0;
   setArranged(false);renderAll();
   flow=false;
 }
@@ -897,6 +913,11 @@ async function runFlow(){
     setStep(3);
     if(!(await waitPick('protein'))){cancelFlow();return}
     await dropIn(pieces().length);
+  }
+  if(LISTS.drink.length){
+    setStep(4);
+    if(!(await waitPick('drink'))){cancelFlow();return}
+    renderPrice();
   }
   await packAndAdd();
   flow=false;
@@ -1199,9 +1220,10 @@ function pkStop(){PK.run=false;PK.tw=[]}
 async function packAndAdd(){
   busy=true;
   const sf=F(S.soup),sw=S.swallow?F(S.swallow.id):null;
-  const plateData={id:Date.now(),parts:parts(),total:total()};
+  const plateData={id:Date.now(),parts:parts(),total:total(true)},drinks=S.drink.map(function(d){const f=F(d.id);return {key:'drink:'+d.id,n:f.name,p:f.price,img:f.src||f.img||'',q:d.qty}});
   const addToApp=function(){
     Checkout.add({key:'swallow:'+plateData.id,n:(sf?sf.name:'Soup')+(sw?' & '+sw.name:'')+' plate',p:plateData.total,img:(sf&&(sf.src||sf.img))||''},1,null);
+    drinks.forEach(function(d){Checkout.add({key:d.key,n:d.n,p:d.p,img:d.img},d.q,null)});
   };
 
   const tray=$('#tray'),pack=$('#pack'),pf=$('#pkFood'),p3=$('#pk3d');
