@@ -39,6 +39,7 @@ textarea{min-height:110px;resize:vertical}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .row .n{flex:1 1 140px;width:auto}
 .row .p{flex:0 0 96px;width:96px}
+.row .k{flex:0 0 150px;width:150px}
 .row .d{flex:1 1 100%;width:100%}
 .thm{width:52px;height:52px;flex:none;border-radius:10px;background:conic-gradient(#f3ece2 25%,#fff 0 50%,#f3ece2 0 75%,#fff 0) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:11px;color:var(--mut)}
 .thm img{max-width:100%;max-height:100%;object-fit:contain}
@@ -301,6 +302,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
   }
   function rowBody(row, n, p) {
     var o = { name: n, price: p, description: row.querySelector('.d').value.trim() || null, details: row.querySelector('.x').value.trim() || null, available: row.querySelector('.av').checked };
+    var kk = row.querySelector('.k'); if (kk) o.kind = kk.value || null;
     return o;
   }
   var addFile = null, addPrev = '';
@@ -342,6 +344,7 @@ label.chk.sm input{width:18px;height:18px;margin:0}
           '<input class="in d" placeholder="Short description, e.g. Rice, chicken, plantain" value="' + esc(r.description || '') + '">' +
           '<textarea class="in x" rows="3" placeholder="Details shown on the product page, e.g. ingredients, size, what is inside">' + esc(r.details || '') + '</textarea>' +
           (isJuice() ? '<div class="frw"><span>Fruit on the page</span>' + fruitSelect('fr', fm[r.id]) + '</div>' : '') +
+          (menuCat === 'swallow-soups' && 'kind' in r ? '<select class="in k" aria-label="Type"><option value="">Type: automatic</option>' + [['soup', 'Soup'], ['swallow', 'Swallow'], ['protein', 'Protein']].map(function (o) { return '<option value="' + o[0] + '"' + (r.kind === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' : '') +
           '<label class="chk sm" style="margin:0"><input type="checkbox" class="av"' + (r.available === false ? '' : ' checked') + '> Available</label>' +
           (isDrinkCat() && r.image_url ? '<button class="b ghost" data-m3d>Make 3D</button><span class="muted" data-mst></span>' : '') + '<button class="b" data-save>Save</button><button class="b ghost" data-ipic>' + (r.image_url ? 'Replace pic' : 'Add pic') + '</button>' +
           (r.image_url ? '<button class="b ghost" data-ipicrm>Clear pic</button>' : '') + '<button class="b ghost" data-del>Delete</button></div>';

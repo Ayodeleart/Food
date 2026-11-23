@@ -98,7 +98,7 @@ const D=[
  {n:'Blue Frost',p:2.4,base:'#d9a064',ice:'#3bb8d8',dr:null,spr:['#f2b6ff','#fff','#ffd45e','#ff6b81'],bg:'#c8d7dc',acc:'#aee4f3',nut:[['Salt','7g',3],['Sugar','13g',8],['Fat','9g',12],['Energy','220kcal',44]]},
  {n:'Pink Sprinkle',p:2.4,base:'#d9a064',ice:'#ee3f8f',dr:null,spr:['#fff','#7fdc9b','#6ac4ff','#ffd45e','#b98cff'],bg:'#e1c5cf',acc:'#f6b6d0',nut:[['Salt','8g',3],['Sugar','8g',7],['Fat','6g',12],['Energy','180kcal',40]]}
 ];
-{ const rows = await sbItems(); if (rows.length) { D.length = 0; rows.forEach(r => D.push(r.image_url ? { n: r.name, p: Number(r.price), img: r.image_url, nut: [] } : { n: r.name, p: Number(r.price), base: '#d9a064', ice: '#ee3f8f', dr: null, spr: ['#fff', '#ffd45e'], bg: '#e1c5cf', acc: '#f6b6d0', nut: [] })); } }
+{ const rows = await sbItems(); if (!rows.length) { document.body.innerHTML = '<p style="margin:0;padding:96px 28px;text-align:center;font:700 20px system-ui,sans-serif;color:#555">No items here yet.</p>'; return; } { D.length = 0; rows.forEach(r => D.push(r.image_url ? { n: r.name, p: Number(r.price), img: r.image_url, nut: [] } : { n: r.name, p: Number(r.price), base: '#d9a064', ice: '#ee3f8f', dr: null, spr: ['#fff', '#ffd45e'], bg: '#e1c5cf', acc: '#f6b6d0', nut: [] })); } }
 const $=id=>document.getElementById(id),app=$('app'),N=D.length;
 const PT=new URLSearchParams(location.search).get('t')||'';$('brand').textContent=PT;if(PT)document.title=PT;
 const PB=['#e1c5cf','#dcd7b8','#c8d7dc','#dacfc8','#d9cacd'],PA=['#f6b6d0','#f6e27a','#aee4f3','#f1d9bd','#e6c9f2'];

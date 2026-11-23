@@ -122,7 +122,7 @@ const CONFIG = {
 };
 /* ========================================================== */
 
-{ const rows = await sbItems(); if (rows.length) CONFIG.items = rows.map(r => ({ name: r.name, price: Number(r.price), image: r.image_url || '', desc: r.description || '' })); }
+{ const rows = await sbItems(); if (!rows.length) { document.body.innerHTML = '<p style="margin:0;padding:96px 28px;text-align:center;font:700 20px system-ui,sans-serif;color:#555">No items here yet.</p>'; return; } CONFIG.items = rows.map(r => ({ name: r.name, price: Number(r.price), image: r.image_url || '', desc: r.description || '' })); }
 document.getElementById('title').textContent = CONFIG.title;
 const pill = document.getElementById('pill');
 pill.textContent = CONFIG.pillText;

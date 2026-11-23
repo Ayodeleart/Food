@@ -268,17 +268,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 <div class="toast" id="toast" role="status"></div>
 
 <script>
-/* =====================================================================
-   EDIT HERE: currency, prices and photos
-   - SOUP PHOTOS: drop your files into  assets/soups/  and name each one by the
-     soup id: egusi, efo, ogbono, okra, banga  (e.g. assets/soups/egusi.webp).
-     .webp .png .jpg and .jpeg all work. Use a square, top-down photo of the
-     soup (a round bowl works best). Missing files fall back to the drawn
-     illustration automatically, so you can upload one at a time.
-     To add a new soup: add a row to FOODS below, then upload assets/soups/<id>.png.
-   - Other foods: set `img` on the row to a photo path (a transparent PNG looks
-     best), or add its folder to IMAGE_DIRS and name files by id the same way.
-   ===================================================================== */
+/* Products on this page come from the admin: Menu items > Swallow & Soups. A name with soup/efo/egusi... is a soup, anything else a swallow;
+   a soup with a price is sold by the spoon, a free one is included. Pictures are the ones uploaded on each item. Nothing is built in. */
 const CURRENCY = '₦';
 
 const CATS = [
@@ -289,43 +280,7 @@ const CATS = [
   {id:'side',    label:'Sides',   hint:'Optional extras for your tray'}
 ];
 
-const FOODS = [
-  /* swallow: price is per wrap */
-  {id:'eba',    cat:'swallow', name:'Eba',         price:300, c:'#e6bf5a', d:'#9b6b1a', img:null},
-  {id:'yam',    cat:'swallow', name:'Pounded yam', price:400, c:'#f2e6c4', d:'#b09a62', img:null},
-  {id:'amala',  cat:'swallow', name:'Amala',       price:300, c:'#5a3a26', d:'#25150b', img:null},
-  {id:'fufu',   cat:'swallow', name:'Fufu',        price:300, c:'#f4f0e4', d:'#b8b095', img:null},
-  {id:'semo',   cat:'swallow', name:'Semo',        price:300, c:'#ecd9a0', d:'#a98d4c', img:null},
-  {id:'wheat',  cat:'swallow', name:'Wheat',       price:300, c:'#8b5e3c', d:'#4a2e1a', img:null},
-  /* rice: price is per spoon */
-  {id:'jollof', cat:'rice', name:'Jollof rice', price:250, c:'#d9531c', g1:'#f08a4b', g2:'#a8340f', img:null},
-  {id:'white',  cat:'rice', name:'White rice',  price:200, c:'#f4efe3', g1:'#ffffff', g2:'#d3c9b1', img:null},
-  {id:'fried',  cat:'rice', name:'Fried rice',  price:300, c:'#e6bf4a', g1:'#5c9a3a', g2:'#e8802b', img:null},
-  /* soups */
-  {id:'egusi',  cat:'soup', name:'Egusi',     price:0, c:'#b9893a', img:null,
-    spec:[{c:'#f1d56e',n:34,r:[2.6,4.6]},{c:'#3f7a2e',n:12,r:[1.4,2.8]},{c:'#c23b1d',n:7,r:[1.4,2.2]}]},
-  {id:'efo',    cat:'soup', name:'Efo riro',  price:0, spoon:300,  c:'#2f5f2a', img:null,
-    spec:[{c:'#4f8a3c',n:34,r:[1.8,3.4]},{c:'#c4321b',n:11,r:[1.6,2.6]},{c:'#1d3f1c',n:14,r:[1.4,2.6]}]},
-  {id:'ogbono', cat:'soup', name:'Ogbono',    price:0, c:'#7a5124', img:null,
-    spec:[{c:'#a87a3c',n:26,r:[2.6,4.4],e:1},{c:'#4d3015',n:14,r:[2,3.4],e:1},{c:'#c4321b',n:6,r:[1.4,2]}]},
-  {id:'okra',   cat:'soup', name:'Okra',      price:0,  c:'#6f9a3a', img:null,
-    spec:[{c:'#b9d36b',n:20,r:[2.2,3.6]},{c:'#2f5a1f',n:18,r:[1,1.8]},{c:'#e0f0a0',n:10,r:[1.2,2]}]},
-  {id:'banga',  cat:'soup', name:'Banga',     price:0, c:'#c3541a', img:null,
-    spec:[{c:'#e88a3a',n:26,r:[1.8,3.2]},{c:'#7a2e10',n:14,r:[2,3.6]},{c:'#f5c06a',n:8,r:[1.4,2.2]}]},
-  /* protein: price is per piece */
-  {id:'beef',   cat:'protein', name:'Beef',       price:400,  img:null},
-  {id:'goat',   cat:'protein', name:'Goat meat',  price:600,  img:null},
-  {id:'chicken',cat:'protein', name:'Chicken',    price:1500, img:null},
-  {id:'turkey', cat:'protein', name:'Turkey',     price:1800, img:null},
-  {id:'fish',   cat:'protein', name:'Fish',       price:1200, img:null},
-  {id:'ponmo',  cat:'protein', name:'Ponmo',      price:300,  img:null},
-  {id:'shaki',  cat:'protein', name:'Shaki',      price:400,  img:null},
-  {id:'egg',    cat:'protein', name:'Boiled egg', price:300,  img:null},
-  /* sides */
-  {id:'plantain',cat:'side', name:'Plantain',  price:500, img:null},
-  {id:'moin',    cat:'side', name:'Moin moin', price:600, img:null},
-  {id:'salad',   cat:'side', name:'Salad',     price:700, img:null}
-];
+const FOODS = [];   // filled from the admin Menu items
 
 /* Where things land on the tray: [x%, y%, size%, rotation°] */
 const WRAP_POS = [[21,35,21,-12],[33,23,21,8],[35,41,21,14],[17,50,21,-6],[46,19,20,-4],[23,23,20,10]];
@@ -472,11 +427,11 @@ const fmt=function(n){return CURRENCY+n.toLocaleString('en-NG')};
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 
-const SOUPS=FOODS.filter(function(f){return f.cat==='soup'});
-const LISTS={swallow:FOODS.filter(function(f){return f.cat==='swallow'}),protein:FOODS.filter(function(f){return f.cat==='protein'})};
+const SOUPS=[];
+const LISTS={swallow:[],protein:[]};
 const UNITS={swallow:{one:'wrap',many:'wraps',max:6,title:'Choose your swallow'},protein:{one:'piece',many:'pieces',max:4,title:'Choose your protein'}};
 const CAP=PROTEIN_POS.length;     // most protein pieces that fit on the plate
-const NS=SOUPS.length;
+let NS=0;
 const nextOf=function(i){return (i+1)%NS};
 const prevOf=function(i){return i<0?NS-1:(i-1+NS)%NS};
 
@@ -632,7 +587,6 @@ async function springBack(dragDx){
 
 /* real photos: uploaded in the admin (Plate builder tab) and stored as menu_images keys "plate/<id>" */
 const SB='https://fubhpawdzzjutsfzyzhz.supabase.co',SK='sb_publishable_YCZHLx7xjXJtnwoJ7amhZg_NiHiJ0mm';
-const PLATE_KEY={yam:'pounded',moin:'moimoi',salad:'slaw'};      // page id -> admin slot id
 let photoTimer=0;
 function refreshPhotos(){
   clearTimeout(photoTimer);
@@ -654,25 +608,45 @@ function normalize(im){
     return o.toDataURL('image/png');
   }catch(e){return null}
 }
-async function loadFoodPhotos(){
-  let rows;
-  try{
-    const r=await fetch(SB+'/rest/v1/menu_images?select=key,image_url&key=like.plate%2F*',{headers:{apikey:SK,Authorization:'Bearer '+SK}});
-    if(!r.ok)return;rows=await r.json();
-  }catch(e){return}
-  const m={};rows.forEach(function(x){if(x.image_url)m[x.key.slice(6)]=x.image_url});
-  FOODS.forEach(function(f){
-    const url=m[PLATE_KEY[f.id]||f.id];if(!url||f.img)return;
+const SOUP_RE=/soup|efo|egusi|ogbono|okra|banga|afang|ewedu|gbegiri|stew|oha|ofe\b|edikang|vegetable/i;
+const DEF={
+  soup:{c:'#b9893a',spec:[{c:'#d9a74a',n:24,r:[2,3.6]},{c:'#7a5a22',n:12,r:[1.4,2.6]},{c:'#c23b1d',n:6,r:[1.2,2]}]},
+  swallow:{c:'#e6c27a',d:'#a8802f'},protein:{}
+};
+function loadPic(f){
+  return new Promise(function(done){
+    if(!f.src){done();return}
+    let fin=false;const end=function(){if(!fin){fin=true;done()}};
     const im=new Image();im.crossOrigin='anonymous';
     im.onload=function(){
-      if(f.cat==='swallow'){const u=normalize(im);if(u){const n=new Image();n.onload=function(){f.src=url;f.img=u;f._im=n;refreshPhotos()};n.src=u;return}}
-      f.src=url;f.img=url;f._im=im;refreshPhotos();
+      if(f.cat==='swallow'){const u=normalize(im);if(u){const n=new Image();n.onload=function(){f.img=u;f._im=n;end()};n.onerror=function(){f.img=f.src;f._im=im;end()};n.src=u;return}}
+      f.img=f.src;f._im=im;end();
     };
-    im.src=url;
+    im.onerror=end;im.src=f.src;setTimeout(end,5000);
   });
 }
+async function loadFoods(){
+  let rows=[];
+  try{
+    const r=await fetch(SB+'/rest/v1/menu_items?select=*&category_id=eq.swallow-soups&order=created_at.asc&limit=80',{headers:{apikey:SK,Authorization:'Bearer '+SK}});
+    if(r.ok)rows=await r.json();
+  }catch(e){}
+  rows.filter(function(r){return r.available!==false}).forEach(function(r){
+    const kind=['soup','swallow','protein'].indexOf(r.kind)>-1?r.kind:(SOUP_RE.test(r.name)?'soup':'swallow'),price=Number(r.price)||0;
+    const f=Object.assign({id:r.id,cat:kind,name:r.name,price:price,img:null,src:r.image_url||''},DEF[kind]);
+    if(kind==='soup'&&price>0){f.spoon=price;f.price=0}      // a priced soup is sold by the spoon, a free one is included
+    FOODS.push(f);
+  });
+  await Promise.all(FOODS.map(loadPic));
+  FOODS.forEach(function(f){if(f.cat==='soup')SOUPS.push(f);else if(LISTS[f.cat])LISTS[f.cat].push(f)});
+  NS=SOUPS.length;
+}
 buildRail();
-loadFoodPhotos();
+loadFoods().then(function(){
+  buildRail();
+  if(!SOUPS.length)$('#rail').innerHTML='<p style="padding:22px;text-align:center;font-weight:700;opacity:.7">No soups available right now.</p>';
+  renderPeeks();renderAll();
+});
 (function(){
   const rail=$('#rail');let raf=0;
   rail.addEventListener('scroll',function(){
@@ -866,12 +840,16 @@ async function runFlow(){
     if(!(await waitSpoons())){cancelFlow();return}
     renderPrice();
   }
-  setStep(2);
-  if(!(await waitPick('swallow'))){cancelFlow();return}
-  await dropIn(S.swallow?S.swallow.qty:0);
-  setStep(3);
-  if(!(await waitPick('protein'))){cancelFlow();return}
-  await dropIn(pieces().length);
+  if(LISTS.swallow.length){
+    setStep(2);
+    if(!(await waitPick('swallow'))){cancelFlow();return}
+    await dropIn(S.swallow?S.swallow.qty:0);
+  }
+  if(LISTS.protein.length){
+    setStep(3);
+    if(!(await waitPick('protein'))){cancelFlow();return}
+    await dropIn(pieces().length);
+  }
   await packAndAdd();
   flow=false;
 }
