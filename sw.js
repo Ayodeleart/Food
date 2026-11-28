@@ -1,4 +1,4 @@
-const CACHE = 'burger-app-v46';   // app files: bump when you want old copies dropped
+const CACHE = 'burger-app-v47';   // app files: bump when you want old copies dropped
 const IMG = 'jeun-koyo-media';    // pictures and 3D models: kept between versions
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const MAX_MEDIA = 400;

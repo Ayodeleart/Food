@@ -117,6 +117,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
 .logo img{width:40px!important;height:43px!important;max-width:none!important;object-fit:contain}
 .logo{position:absolute;left:0;right:0;top:44px;height:44px;display:flex;justify-content:center;align-items:center;pointer-events:none;z-index:1}
 .iconbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#FFF3DB}
+.iconbtn.menupill{width:auto;padding:0 16px 0 10px;gap:4px;border-radius:22px;background:rgba(20,12,8,.32);font:700 15px/1 inherit;font-family:inherit;letter-spacing:.2px}
 .iconbtn.back{border-radius:22px;background:rgba(20,12,8,.32)}
 .cartbtn{min-height:44px;display:flex;align-items:center;color:#FFF3DB;font-size:15px;font-weight:600;letter-spacing:1.4px}
 .cartbtn svg{margin-right:8px}
@@ -350,7 +351,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:tra
   var FEATURED = { key: 'featured', cat: ORDER[7], live: false, it: { n: '', p: '' } };
   function find(key) { if (key === 'featured') return FEATURED; var a = allItems(); for (var i = 0; i < a.length; i++) if (a[i].key === key) return a[i]; }
   function hdr() {
-    return '<div class="hdr"><button class="iconbtn" data-drawer="1" aria-label="Menu">' + ICON.burger + '</button>' +
+    return '<div class="hdr"><button class="iconbtn menupill" data-drawer="1" aria-label="Menu">' + ICON.burger + '<span>Menu</span></button>' +
       '<button class="iconbtn avatar" data-profile="1" aria-label="Profile">' + ICON2.user + '</button></div>';
   }
   function nav(active) {
